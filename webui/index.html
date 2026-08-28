@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="ColdLightVibe">
+  <meta name="version" content="1.0">
+  <title>File Namer</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-mark" aria-label="File Namer">
+        <div class="brand-icon"><img src="/assets/logo.png" alt=""></div>
+        <div><strong>File Namer</strong></div>
+      </div>
+      <div class="root-control">
+        <label for="rootPath">根目录</label>
+        <input id="rootPath" type="text" placeholder="输入 Windows 文件夹路径，例如 D:\\Samples" autocomplete="off">
+        <button class="button button-quiet" id="pickFolder" title="打开 Windows 文件夹选择器"><span class="icon">⌂</span>选择</button>
+        <button class="button button-primary" id="scanButton"><span class="icon">⌕</span>扫描</button>
+      </div>
+      <button class="button button-quiet theme-toggle" id="themeToggle" title="切换深色模式"><span class="icon" id="themeIcon">☾</span><span id="themeLabel">深色</span></button>
+      <!-- <div class="top-status"><span class="status-dot"></span><span>离线运行</span></div> -->
+    </header>
+
+    <main class="workspace">
+      <aside class="sidebar">
+        <div class="side-heading"><span>命名组</span><span class="count-pill" id="groupCount">0</span></div>
+        <div class="side-note">按文件夹和扩展名组织命名组；同 stem 关联文件可跨格式同步执行。</div>
+        <div id="groupList" class="group-list empty-state">扫描后显示命名组</div>
+        <div class="side-divider"></div>
+        <div class="side-heading"><span>扫描范围</span></div>
+        <label class="check-row"><input id="includeHidden" type="checkbox"><span>包含隐藏文件</span></label>
+        <label class="check-row"><input id="includeSystem" type="checkbox"><span>包含系统文件</span></label>
+        <div class="side-footer">
+          <div class="side-foot-label">历史记录</div>
+          <div class="side-foot-value">保留在应用目录 history</div>
+          <button class="button button-outline full-width" id="undoButton"><span class="icon">↶</span>撤销最近操作</button>
+          <button class="button button-outline full-width" id="redoButton"><span class="icon">↷</span>还原最近撤销</button>
+        </div>
+      </aside>
+      <div class="sidebar-resizer" id="sidebarResizer" title="拖动调整命名组栏宽度" aria-label="调整命名组栏宽度"></div>
+
+      <section class="content">
+        <div class="view-tabs" role="tablist">
+          <button class="view-tab active" data-view="rename" role="tab">批量命名</button>
+          <button class="view-tab" data-view="export" role="tab">导出文件名表格</button>
+          <div class="view-spacer"></div>
+          <div class="scan-summary" id="scanSummary">等待扫描</div>
+        </div>
+
+        <section id="renameView" class="view-panel active">
+          <div class="summary-strip">
+            <div><span class="metric-label">文件</span><strong id="fileMetric">0</strong></div>
+            <div><span class="metric-label">扩展名</span><strong id="extensionMetric">0</strong></div>
+            <div><span class="metric-label">当前组</span><strong id="currentGroupMetric">-</strong></div>
+            <div><span class="metric-label">同 stem</span><strong id="associationMetric">0</strong></div>
+            <div class="summary-spacer"></div>
+            <button class="button button-outline" id="importExcel"><span class="icon">⇧</span>导入 XLSX</button>
+            <input id="excelFile" type="file" accept=".xlsx" hidden>
+          </div>
+
+          <div class="section-heading">
+            <div><h1>目标文件名</h1><p>先编辑预览，再执行重命名。原扩展名始终保留。</p></div>
+            <div class="heading-actions">
+              <button class="button button-quiet" id="previewButton"><span class="icon">◌</span>刷新预览</button>
+              <button class="button button-quiet" id="addBpmSuffixButton" title="按音频或 MIDI 的 metadata/文件名添加 BPM 后缀"><span class="icon">♫</span>添加 BPM 后缀</button>
+              <button class="button button-primary" id="renameGroupButton"><span class="icon">↗</span>重命名当前组</button>
+              <button class="button button-dark" id="renameAllButton"><span class="icon">✓</span>执行已选组</button>
+            </div>
+          </div>
+
+          <div class="settings-panel">
+            <div class="field field-wide"><label>元前缀</label><input id="metaPrefix" type="text" placeholder="默认使用根文件夹名称"></div>
+            <div class="field field-wide"><label>组前缀</label><input id="groupPrefix" type="text" placeholder="当前文件夹名称"></div>
+            <div class="field"><label>子前缀</label><input id="childPrefix" type="text" placeholder="可批量应用"></div>
+            <div class="field small-field"><label>分隔符</label><input id="separator" type="text" value="_" maxlength="8"></div>
+            <div class="field mode-field"><label>名称模式</label><select id="nameMode"><option value="original">原文件名</option><option value="numeric">数字编号</option><option value="excel">Excel 名称</option></select></div>
+            <div class="numeric-fields hidden" id="numericFields">
+              <div class="field compact"><label>起始</label><input id="numericStart" type="number" value="1" min="0"></div>
+              <div class="field compact"><label>位数</label><input id="numericWidth" type="number" value="2" min="1"></div>
+              <div class="field compact"><label>步长</label><input id="numericStep" type="number" value="1"></div>
+            </div>
+            <div class="mapping-panel">
+              <div class="mapping-title">目录层级映射</div>
+              <div class="mapping-fields">
+                <div class="field compact"><label>元前缀</label><select id="metaLevel"></select></div>
+                <div class="field compact"><label>组前缀</label><select id="groupLevel"></select></div>
+                <div class="field compact"><label>子前缀</label><select id="childLevel"></select></div>
+                <button class="button button-quiet" id="applyMappingButton">应用映射</button>
+              </div>
+              <div class="mapping-help">自动为末端三级；也可指定根目录级别或当前目录的相对层级。</div>
+            </div>
+            <div class="parse-panel">
+              <div class="parse-title">文件名解析模板</div>
+              <div class="parse-controls">
+                <input id="parseTemplate" type="text" placeholder="auto 或 {type}_{name}_{number}_{bpm}">
+                <label class="check-row"><input id="parseUseName" type="checkbox"><span>将解析出的 name 用作名称</span></label>
+                <button class="button button-quiet" id="parsePreviewButton">解析预览</button>
+              </div>
+              <div class="parse-help">支持 {name}、{type}、{number}、{bpm}、{scale}、{key}、{category}；Excel B 列也可使用 {bpm}/{scale}；解析只影响预览，除非勾选使用 name。</div>
+            </div>
+          </div>
+
+          <div class="extension-bar">
+            <span class="bar-label">参与处理</span>
+            <div id="extensionFilters" class="chip-list"><span class="muted">扫描后动态生成扩展名</span></div>
+          </div>
+
+          <div class="table-toolbar">
+            <div class="search-wrap"><span class="search-icon">⌕</span><input id="searchInput" type="search" placeholder="搜索当前组文件名"></div>
+            <select id="statusFilter"><option value="all">全部状态</option><option value="Ready">Ready</option><option value="Renamed">Renamed</option><option value="Conflict">Conflict</option><option value="Skipped">Skipped</option><option value="未匹配">未匹配</option><option value="Error">Error</option></select>
+            <button class="button button-quiet" id="selectVisible">全选可见</button>
+            <button class="button button-quiet" id="deselectVisible">取消选择</button>
+            <button class="button button-quiet" id="removeSelected">移除选中</button>
+            <span class="toolbar-spacer"></span><span id="selectedMetric" class="selected-metric">已选 0</span>
+          </div>
+
+          <div class="table-shell">
+            <table class="file-table">
+              <thead><tr><th class="check-col"><input type="checkbox" id="selectAll"></th><th>当前文件名</th><th>文件夹 / 相对路径</th><th>扩展名</th><th>子前缀</th><th>名称</th><th>解析结果</th><th>新文件名预览</th><th>状态</th><th class="action-col">播放</th><th class="action-col">单项</th><th class="action-col">移除</th></tr></thead>
+              <tbody id="fileRows"><tr><td colspan="12" class="empty-row">选择根目录并扫描文件</td></tr></tbody>
+            </table>
+          </div>
+
+          <div class="audio-panel">
+            <div class="audio-title"><div><strong id="audioName">未选择音频文件</strong><span id="audioMeta">音频预览</span></div></div>
+            <audio id="audioPlayer" preload="metadata"></audio>
+            <div class="audio-controls">
+              <button class="audio-control-button" id="audioPlay" title="播放或暂停音频">▶</button>
+              <span class="audio-time" id="audioCurrent">00:00</span>
+              <input class="audio-seek" id="audioSeek" type="range" min="0" max="1000" value="0" step="1" aria-label="音频进度">
+              <span class="audio-time" id="audioDuration">00:00</span>
+              <label class="volume-control" title="音量"><input id="audioVolume" type="range" min="0" max="1" value="0.8" step="0.01" aria-label="音量"></label>
+            </div>
+          </div>
+        </section>
+
+        <section id="exportView" class="view-panel">
+          <div class="section-heading export-heading"><div><h1>导出文件名表格</h1><p>每个直接包含所选扩展名文件的文件夹单独生成一个 XLSX。</p></div><button class="button button-primary" id="exportButton"><span class="icon">⇩</span>导出并打开根目录</button></div>
+          <div class="export-options">
+            <div class="export-option-head"><span>导出范围</span><button class="button button-quiet" id="exportScanButton">刷新扫描</button></div>
+            <label class="field export-mode-field"><span>导出格式</span><select id="exportMode"><option value="compat">兼容导出（A 列名称）</option><option value="detail">详细导出（SourceName / NewName / Metadata / Summary）</option></select></label>
+            <label class="check-row"><input id="exportHidden" type="checkbox"><span>包含隐藏文件</span></label>
+            <label class="check-row"><input id="exportSystem" type="checkbox"><span>包含系统文件</span></label>
+            <div class="export-help">自动忽略所有 `.ffnf.xlsx` 和 `.oriNN.ffnf.xlsx`；输出写入内容文件夹的父级目录，不覆盖已有表格。</div>
+          </div>
+          <div class="export-extension-section"><div class="section-label">导出扩展名</div><div id="exportExtensions" class="chip-list"><span class="muted">点击刷新扫描</span></div></div>
+          <div id="exportResults" class="export-results empty-state">尚未导出</div>
+        </section>
+      </section>
+    </main>
+
+    <section class="log-drawer" id="logDrawer">
+      <div class="log-resizer" id="logResizer" title="拖动调整日志高度" aria-label="调整日志高度"></div>
+      <button class="log-toggle" id="logToggle"><span>运行日志</span><span id="logCount">0</span><span class="chevron">⌃</span></button>
+      <div class="log-body" id="logBody"></div>
+    </section>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1823 @@
+[
+  {
+    "operation_time": "2026-08-26T14:53:36+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\78叫.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_78叫.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3969214,
+          "mtime_ns": 1724066042000000000,
+          "file_id": 562949953579869,
+          "sha256": "e05d91b481ce432eff317c68eaf7cc58544efa861d2c366f3ba04022a15fb666"
+        },
+        "new_fingerprint": {
+          "size": 3969214,
+          "mtime_ns": 1724066042000000000,
+          "file_id": 562949953579869,
+          "sha256": "e05d91b481ce432eff317c68eaf7cc58544efa861d2c366f3ba04022a15fb666"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\78当当.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_78当当.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3969214,
+          "mtime_ns": 1724066150000000000,
+          "file_id": 562949953579870,
+          "sha256": "49a843f5977374cd97d58213691183e1f32bfc63e54d17c4f4b300548006ad56"
+        },
+        "new_fingerprint": {
+          "size": 3969214,
+          "mtime_ns": 1724066150000000000,
+          "file_id": 562949953579870,
+          "sha256": "49a843f5977374cd97d58213691183e1f32bfc63e54d17c4f4b300548006ad56"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\78跳.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_78跳.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3969214,
+          "mtime_ns": 1724066346000000000,
+          "file_id": 562949953579871,
+          "sha256": "07336fcac7c7a4c2e80e3b6f11512b9168267987b6ae630d31ba89f2b128bf05"
+        },
+        "new_fingerprint": {
+          "size": 3969214,
+          "mtime_ns": 1724066346000000000,
+          "file_id": 562949953579871,
+          "sha256": "07336fcac7c7a4c2e80e3b6f11512b9168267987b6ae630d31ba89f2b128bf05"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\云.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_云.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759476052000000000,
+          "file_id": 562949953579888,
+          "sha256": "1c890a5f64026610c17a1dbdbd4f9af4f844f8b3d5d952baa22d8e20fccab790"
+        },
+        "new_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759476052000000000,
+          "file_id": 562949953579888,
+          "sha256": "1c890a5f64026610c17a1dbdbd4f9af4f844f8b3d5d952baa22d8e20fccab790"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\信号不好 (2).wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_信号不好 (2).wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 6350584,
+          "mtime_ns": 1754284194000000000,
+          "file_id": 562949953579891,
+          "sha256": "844c1c761b899d2cc8920ffd4813e1e037c41493ceeda9f3f7f61d601d0b098b"
+        },
+        "new_fingerprint": {
+          "size": 6350584,
+          "mtime_ns": 1754284194000000000,
+          "file_id": 562949953579891,
+          "sha256": "844c1c761b899d2cc8920ffd4813e1e037c41493ceeda9f3f7f61d601d0b098b"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\信号不好.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_信号不好.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3073984,
+          "mtime_ns": 1757941378000000000,
+          "file_id": 562949953579892,
+          "sha256": "64eb9225aab23720554e4997f8f0eb6909dcc7ebc5abe88ee4ae6c05d5bef2d3"
+        },
+        "new_fingerprint": {
+          "size": 3073984,
+          "mtime_ns": 1757941378000000000,
+          "file_id": 562949953579892,
+          "sha256": "64eb9225aab23720554e4997f8f0eb6909dcc7ebc5abe88ee4ae6c05d5bef2d3"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\冰晶云.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_冰晶云.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3175384,
+          "mtime_ns": 1753944722000000000,
+          "file_id": 562949953579894,
+          "sha256": "80fabc7eca529d603814f16883075ef5b131e98a6ce93004d48c2554118307c9"
+        },
+        "new_fingerprint": {
+          "size": 3175384,
+          "mtime_ns": 1753944722000000000,
+          "file_id": 562949953579894,
+          "sha256": "80fabc7eca529d603814f16883075ef5b131e98a6ce93004d48c2554118307c9"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\吉他.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_吉他.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2790886,
+          "mtime_ns": 1755096942000000000,
+          "file_id": 562949953579895,
+          "sha256": "3de580bbee49e158faf16075cdb95dc6b21950fc2703fa54d5ebee21d51fecf1"
+        },
+        "new_fingerprint": {
+          "size": 2790886,
+          "mtime_ns": 1755096942000000000,
+          "file_id": 562949953579895,
+          "sha256": "3de580bbee49e158faf16075cdb95dc6b21950fc2703fa54d5ebee21d51fecf1"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\摇.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_摇.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759476786000000000,
+          "file_id": 562949953579897,
+          "sha256": "9a53dd82caff1260e50aa1f45f1790d4f9453d6fd9e4cdd3fd4d6540fb8c875e"
+        },
+        "new_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759476786000000000,
+          "file_id": 562949953579897,
+          "sha256": "9a53dd82caff1260e50aa1f45f1790d4f9453d6fd9e4cdd3fd4d6540fb8c875e"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\水.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_水.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3528214,
+          "mtime_ns": 1726460484000000000,
+          "file_id": 562949953579898,
+          "sha256": "89deac97262444e96480d0646c88a0155a4f2df482b3fef6c7a82407feb9e02c"
+        },
+        "new_fingerprint": {
+          "size": 3528214,
+          "mtime_ns": 1726460484000000000,
+          "file_id": 562949953579898,
+          "sha256": "89deac97262444e96480d0646c88a0155a4f2df482b3fef6c7a82407feb9e02c"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\水弹簧.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_水弹簧.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3175384,
+          "mtime_ns": 1753944848000000000,
+          "file_id": 562949953579899,
+          "sha256": "de56408d7a642f422636eae763e8e28587bd883bb656318fb562806d11fe0506"
+        },
+        "new_fingerprint": {
+          "size": 3175384,
+          "mtime_ns": 1753944848000000000,
+          "file_id": 562949953579899,
+          "sha256": "de56408d7a642f422636eae763e8e28587bd883bb656318fb562806d11fe0506"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\水晶1.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_水晶1.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 1284306,
+          "mtime_ns": 1743682166000000000,
+          "file_id": 562949953579900,
+          "sha256": "1b9578ff73e44e2e18c7b81f92e3ef494c10c19c53b50d008dafc11f0cfc7335"
+        },
+        "new_fingerprint": {
+          "size": 1284306,
+          "mtime_ns": 1743682166000000000,
+          "file_id": 562949953579900,
+          "sha256": "1b9578ff73e44e2e18c7b81f92e3ef494c10c19c53b50d008dafc11f0cfc7335"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\玻璃雨.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_玻璃雨.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3124452,
+          "mtime_ns": 1757941142000000000,
+          "file_id": 562949953579901,
+          "sha256": "b392aa98042d5acbb0f3ee6bc91a6190d3d2fda8309d0077b8577176521d4381"
+        },
+        "new_fingerprint": {
+          "size": 3124452,
+          "mtime_ns": 1757941142000000000,
+          "file_id": 562949953579901,
+          "sha256": "b392aa98042d5acbb0f3ee6bc91a6190d3d2fda8309d0077b8577176521d4381"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\略glitch冰晶.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_略glitch冰晶.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3175384,
+          "mtime_ns": 1753944996000000000,
+          "file_id": 562949953579902,
+          "sha256": "9ab37d95bc9c0ddc272cfb805ebea22676fc265da3b819b71d8ae6bb6f992033"
+        },
+        "new_fingerprint": {
+          "size": 3175384,
+          "mtime_ns": 1753944996000000000,
+          "file_id": 562949953579902,
+          "sha256": "9ab37d95bc9c0ddc272cfb805ebea22676fc265da3b819b71d8ae6bb6f992033"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\纯右 (2).wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_纯右 (2).wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 6350584,
+          "mtime_ns": 1754283970000000000,
+          "file_id": 562949953579904,
+          "sha256": "bc163df5ecbb4d23a31c76dbb80dd46dfea10408a70ea62bd9fb12241632824d"
+        },
+        "new_fingerprint": {
+          "size": 6350584,
+          "mtime_ns": 1754283970000000000,
+          "file_id": 562949953579904,
+          "sha256": "bc163df5ecbb4d23a31c76dbb80dd46dfea10408a70ea62bd9fb12241632824d"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\纯右.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_纯右.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759475504000000000,
+          "file_id": 562949953579905,
+          "sha256": "8a52db5a042b3e4d6183f9af74185568bffa07c9916553bde30e0a720cd1ccd2"
+        },
+        "new_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759475504000000000,
+          "file_id": 562949953579905,
+          "sha256": "8a52db5a042b3e4d6183f9af74185568bffa07c9916553bde30e0a720cd1ccd2"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\缓冲区.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_缓冲区.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759476628000000000,
+          "file_id": 562949953579906,
+          "sha256": "9c19a5253d738586e4b61d281218ba642c6b8a80ee9b8def65100ff8828e0b49"
+        },
+        "new_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759476628000000000,
+          "file_id": 562949953579906,
+          "sha256": "9c19a5253d738586e4b61d281218ba642c6b8a80ee9b8def65100ff8828e0b49"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\花园.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_花园.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3175384,
+          "mtime_ns": 1753944940000000000,
+          "file_id": 562949953579907,
+          "sha256": "246334f72cb2122c215d9620c9487d9b90f0a6c10b59099e149be8499daa15c8"
+        },
+        "new_fingerprint": {
+          "size": 3175384,
+          "mtime_ns": 1753944940000000000,
+          "file_id": 562949953579907,
+          "sha256": "246334f72cb2122c215d9620c9487d9b90f0a6c10b59099e149be8499daa15c8"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\那种粒子.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_那种粒子.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 20994268,
+          "mtime_ns": 1757943110000000000,
+          "file_id": 562949953579910,
+          "sha256": "b676e9c869451746a9cab06ebd68c22009f67f8491ac01e0a67465345ac24fc5"
+        },
+        "new_fingerprint": {
+          "size": 20994268,
+          "mtime_ns": 1757943110000000000,
+          "file_id": 562949953579910,
+          "sha256": "b676e9c869451746a9cab06ebd68c22009f67f8491ac01e0a67465345ac24fc5"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\金色飞贼.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_金色飞贼.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759476100000000000,
+          "file_id": 562949953579911,
+          "sha256": "cd04e7d83e44fd850a327f6bcfed036e96ff8bdb5411846748d7a510a004c6d6"
+        },
+        "new_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759476100000000000,
+          "file_id": 562949953579911,
+          "sha256": "cd04e7d83e44fd850a327f6bcfed036e96ff8bdb5411846748d7a510a004c6d6"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\闪烁水晶.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\BotanicaGrains\\？PACK_BotanicaGrains_闪烁水晶.wav",
+        "group_key": "BotanicaGrains\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 8274368,
+          "mtime_ns": 1757941330000000000,
+          "file_id": 562949953579912,
+          "sha256": "a003ae1ffbec1eaef4085f9a3082766b1683b7bff449910d5f1ba20f9111ca15"
+        },
+        "new_fingerprint": {
+          "size": 8274368,
+          "mtime_ns": 1757941330000000000,
+          "file_id": 562949953579912,
+          "sha256": "a003ae1ffbec1eaef4085f9a3082766b1683b7bff449910d5f1ba20f9111ca15"
+        }
+      }
+    ],
+    "restored_count": 42,
+    "undo_sequence": 7,
+    "redone_count": 42,
+    "redone_at": "2026-08-27T11:10:47+08:00"
+  },
+  {
+    "operation_time": "2026-08-26T14:53:36+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\IN POISON.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\？PACK_Glitch_IN POISON.wav",
+        "group_key": "Glitch\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 1814614,
+          "mtime_ns": 1734441846000000000,
+          "file_id": 562949953579882,
+          "sha256": "9956243bad8166b58356b8948bf3a3177f619907145bcf97af3e5c32929fa38f"
+        },
+        "new_fingerprint": {
+          "size": 1814614,
+          "mtime_ns": 1734441846000000000,
+          "file_id": 562949953579882,
+          "sha256": "9956243bad8166b58356b8948bf3a3177f619907145bcf97af3e5c32929fa38f"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\lossy钢琴.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\？PACK_Glitch_lossy钢琴.wav",
+        "group_key": "Glitch\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 453784,
+          "mtime_ns": 1755755096000000000,
+          "file_id": 562949953579883,
+          "sha256": "968694751bd77a928aa8fa4962711f63a37836094907f3bece0a9590118935c7"
+        },
+        "new_fingerprint": {
+          "size": 453784,
+          "mtime_ns": 1755755096000000000,
+          "file_id": 562949953579883,
+          "sha256": "968694751bd77a928aa8fa4962711f63a37836094907f3bece0a9590118935c7"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\ROBOT.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\？PACK_Glitch_ROBOT.wav",
+        "group_key": "Glitch\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 453814,
+          "mtime_ns": 1734440872000000000,
+          "file_id": 562949953579884,
+          "sha256": "4d584f345353a6cd7f14122fd00882ac7ab85d3ff976fba430564e96d5cfb884"
+        },
+        "new_fingerprint": {
+          "size": 453814,
+          "mtime_ns": 1734440872000000000,
+          "file_id": 562949953579884,
+          "sha256": "4d584f345353a6cd7f14122fd00882ac7ab85d3ff976fba430564e96d5cfb884"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\TELEPHONE.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\？PACK_Glitch_TELEPHONE.wav",
+        "group_key": "Glitch\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3629014,
+          "mtime_ns": 1734441058000000000,
+          "file_id": 562949953579885,
+          "sha256": "35713e0951f597a2d041d1ccd8153049398f85603e41b7576ef459c74b7da7d5"
+        },
+        "new_fingerprint": {
+          "size": 3629014,
+          "mtime_ns": 1734441058000000000,
+          "file_id": 562949953579885,
+          "sha256": "35713e0951f597a2d041d1ccd8153049398f85603e41b7576ef459c74b7da7d5"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\tungtungtungsahur.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\？PACK_Glitch_tungtungtungsahur.wav",
+        "group_key": "Glitch\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 4127974,
+          "mtime_ns": 1713540864000000000,
+          "file_id": 562949953579886,
+          "sha256": "72ce2384f2a34192db11940457cf07647564406b6d021409835f2f4d8af0b067"
+        },
+        "new_fingerprint": {
+          "size": 4127974,
+          "mtime_ns": 1713540864000000000,
+          "file_id": 562949953579886,
+          "sha256": "72ce2384f2a34192db11940457cf07647564406b6d021409835f2f4d8af0b067"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\WANGYUAN LAUGHTER.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Glitch\\？PACK_Glitch_WANGYUAN LAUGHTER.wav",
+        "group_key": "Glitch\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3629014,
+          "mtime_ns": 1734441172000000000,
+          "file_id": 562949953579887,
+          "sha256": "dcaa854597eeda54684046edca5e113e95d6794d8732f5e7965c8bc6c780f00f"
+        },
+        "new_fingerprint": {
+          "size": 3629014,
+          "mtime_ns": 1734441172000000000,
+          "file_id": 562949953579887,
+          "sha256": "dcaa854597eeda54684046edca5e113e95d6794d8732f5e7965c8bc6c780f00f"
+        }
+      }
+    ],
+    "restored_count": 12,
+    "undo_sequence": 7,
+    "redone_count": 12,
+    "redone_at": "2026-08-27T11:10:47+08:00"
+  },
+  {
+    "operation_time": "2026-08-26T14:53:36+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\cute intro glitch.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\？PACK_Glitch_Foley_cute intro glitch.wav",
+        "group_key": "GlitchFoley\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 3528214,
+          "mtime_ns": 1719259926000000000,
+          "file_id": 562949953579875,
+          "sha256": "c10c16bf2811c03497994ce383ea6f91cd992ffc7920f3d929c509bdd0887c6e"
+        },
+        "new_fingerprint": {
+          "size": 3528214,
+          "mtime_ns": 1719259926000000000,
+          "file_id": 562949953579875,
+          "sha256": "c10c16bf2811c03497994ce383ea6f91cd992ffc7920f3d929c509bdd0887c6e"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\data (2).wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\？PACK_Glitch_Foley_data (2).wav",
+        "group_key": "GlitchFoley\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 4194124,
+          "mtime_ns": 1713541146000000000,
+          "file_id": 562949953579876,
+          "sha256": "6536548d940a50e581e6a00235a31557bf14bcdabe59942a839a16f8306c256d"
+        },
+        "new_fingerprint": {
+          "size": 4194124,
+          "mtime_ns": 1713541146000000000,
+          "file_id": 562949953579876,
+          "sha256": "6536548d940a50e581e6a00235a31557bf14bcdabe59942a839a16f8306c256d"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\DATA.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\？PACK_Glitch_Foley_DATA.wav",
+        "group_key": "GlitchFoley\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759475556000000000,
+          "file_id": 562949953579877,
+          "sha256": "db95af3fdcfe2d695500c399d4b61e6e37873fb025b359825b7af2fcc718e0db"
+        },
+        "new_fingerprint": {
+          "size": 5896984,
+          "mtime_ns": 1759475556000000000,
+          "file_id": 562949953579877,
+          "sha256": "db95af3fdcfe2d695500c399d4b61e6e37873fb025b359825b7af2fcc718e0db"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\drop1resample1.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\？PACK_Glitch_Foley_drop1resample1.wav",
+        "group_key": "GlitchFoley\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2660140,
+          "mtime_ns": 1726844112000000000,
+          "file_id": 562949953579878,
+          "sha256": "cde0addcbab49f8b1410306ed6d0f8d9ba06d4518f9cc28c1fe7f643a76c51e2"
+        },
+        "new_fingerprint": {
+          "size": 2660140,
+          "mtime_ns": 1726844112000000000,
+          "file_id": 562949953579878,
+          "sha256": "cde0addcbab49f8b1410306ed6d0f8d9ba06d4518f9cc28c1fe7f643a76c51e2"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\drop1resample2.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\？PACK_Glitch_Foley_drop1resample2.wav",
+        "group_key": "GlitchFoley\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2660140,
+          "mtime_ns": 1726844150000000000,
+          "file_id": 562949953579879,
+          "sha256": "49df1d7e50acd4e70ac1ba6a11af49e28652254c82961ea53bf7a21ef26c640e"
+        },
+        "new_fingerprint": {
+          "size": 2660140,
+          "mtime_ns": 1726844150000000000,
+          "file_id": 562949953579879,
+          "sha256": "49df1d7e50acd4e70ac1ba6a11af49e28652254c82961ea53bf7a21ef26c640e"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\drop1resample3.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\？PACK_Glitch_Foley_drop1resample3.wav",
+        "group_key": "GlitchFoley\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2660140,
+          "mtime_ns": 1726844348000000000,
+          "file_id": 562949953579880,
+          "sha256": "35ba00107066ad0017b7265a6d6ccbbcbb0c506e820a6d2bd057e77bed96f83f"
+        },
+        "new_fingerprint": {
+          "size": 2660140,
+          "mtime_ns": 1726844348000000000,
+          "file_id": 562949953579880,
+          "sha256": "35ba00107066ad0017b7265a6d6ccbbcbb0c506e820a6d2bd057e77bed96f83f"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\drop1resample4.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\GlitchFoley\\？PACK_Glitch_Foley_drop1resample4.wav",
+        "group_key": "GlitchFoley\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2660140,
+          "mtime_ns": 1726844402000000000,
+          "file_id": 562949953579881,
+          "sha256": "28b5a832f9973afe015deee15da35131f686ee1e481f904351dc6be8e0f8c927"
+        },
+        "new_fingerprint": {
+          "size": 2660140,
+          "mtime_ns": 1726844402000000000,
+          "file_id": 562949953579881,
+          "sha256": "28b5a832f9973afe015deee15da35131f686ee1e481f904351dc6be8e0f8c927"
+        }
+      }
+    ],
+    "restored_count": 14,
+    "undo_sequence": 7,
+    "redone_count": 14,
+    "redone_at": "2026-08-27T11:10:47+08:00"
+  },
+  {
+    "operation_time": "2026-08-26T14:53:36+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\OneShotSynth\\C2.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\OneShotSynth\\？PACK_OneShot_Synth_C2.wav",
+        "group_key": "OneShotSynth\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 127756,
+          "mtime_ns": 1757478568000000000,
+          "file_id": 562949953579874,
+          "sha256": "0413d12912fa9867b5cf0cc77ddafde73de4aaaecdd4d9b1eeb24be538f7a193"
+        },
+        "new_fingerprint": {
+          "size": 127756,
+          "mtime_ns": 1757478568000000000,
+          "file_id": 562949953579874,
+          "sha256": "0413d12912fa9867b5cf0cc77ddafde73de4aaaecdd4d9b1eeb24be538f7a193"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\OneShotSynth\\C (2).wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\OneShotSynth\\？PACK_OneShot_Synth_C (2).wav",
+        "group_key": "OneShotSynth\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 127756,
+          "mtime_ns": 1757329148000000000,
+          "file_id": 562949953579872,
+          "sha256": "a60bfbb2ea5d6488049ef4eb9aeb5d1ff94508563c377206cca2158d9f758447"
+        },
+        "new_fingerprint": {
+          "size": 127756,
+          "mtime_ns": 1757329148000000000,
+          "file_id": 562949953579872,
+          "sha256": "a60bfbb2ea5d6488049ef4eb9aeb5d1ff94508563c377206cca2158d9f758447"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\OneShotSynth\\C.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\OneShotSynth\\？PACK_OneShot_Synth_C.wav",
+        "group_key": "OneShotSynth\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 189184,
+          "mtime_ns": 1760447362000000000,
+          "file_id": 562949953579873,
+          "sha256": "a28122fef8f991c29a99fdaf2c59e2e0c965f33cb356de278ebeb0020e532371"
+        },
+        "new_fingerprint": {
+          "size": 189184,
+          "mtime_ns": 1760447362000000000,
+          "file_id": 562949953579873,
+          "sha256": "a28122fef8f991c29a99fdaf2c59e2e0c965f33cb356de278ebeb0020e532371"
+        }
+      }
+    ],
+    "restored_count": 6,
+    "undo_sequence": 7,
+    "redone_count": 6,
+    "redone_at": "2026-08-27T11:10:47+08:00"
+  },
+  {
+    "operation_time": "2026-08-26T14:53:36+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\任务成功音效.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\？PACK_Others_任务成功音效.wav",
+        "group_key": "Others\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 964114,
+          "mtime_ns": 1740034978000000000,
+          "file_id": 562949953579889,
+          "sha256": "1144e2cd6bcb92ca20128c6722b8a4a8b7c83e51ac0bc302ee917629c177f170"
+        },
+        "new_fingerprint": {
+          "size": 964114,
+          "mtime_ns": 1740034978000000000,
+          "file_id": 562949953579889,
+          "sha256": "1144e2cd6bcb92ca20128c6722b8a4a8b7c83e51ac0bc302ee917629c177f170"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\全损.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\？PACK_Others_全损.wav",
+        "group_key": "Others\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 6350584,
+          "mtime_ns": 1754284342000000000,
+          "file_id": 562949953579893,
+          "sha256": "2c4925dcd176ab4f6df7741a6e5469b3f3ecf727bfa0294442a6f50487e3745a"
+        },
+        "new_fingerprint": {
+          "size": 6350584,
+          "mtime_ns": 1754284342000000000,
+          "file_id": 562949953579893,
+          "sha256": "2c4925dcd176ab4f6df7741a6e5469b3f3ecf727bfa0294442a6f50487e3745a"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\左侧损伤.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\？PACK_Others_左侧损伤.wav",
+        "group_key": "Others\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 6350584,
+          "mtime_ns": 1754283890000000000,
+          "file_id": 562949953579896,
+          "sha256": "612f12a4686caf86c99a5f5f9c5740c37263a745139fa2d395aa39c282980569"
+        },
+        "new_fingerprint": {
+          "size": 6350584,
+          "mtime_ns": 1754283890000000000,
+          "file_id": 562949953579896,
+          "sha256": "612f12a4686caf86c99a5f5f9c5740c37263a745139fa2d395aa39c282980569"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\轻轻的.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\？PACK_Others_轻轻的.wav",
+        "group_key": "Others\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 6350584,
+          "mtime_ns": 1754284780000000000,
+          "file_id": 562949953579909,
+          "sha256": "ecf0af00f224f6d12913d1a3b6d6c8957c3e2401aa08d1dc49c193a21c5fe1f3"
+        },
+        "new_fingerprint": {
+          "size": 6350584,
+          "mtime_ns": 1754284780000000000,
+          "file_id": 562949953579909,
+          "sha256": "ecf0af00f224f6d12913d1a3b6d6c8957c3e2401aa08d1dc49c193a21c5fe1f3"
+        }
+      }
+    ],
+    "restored_count": 8,
+    "undo_sequence": 7,
+    "redone_count": 8,
+    "redone_at": "2026-08-27T11:10:47+08:00"
+  },
+  {
+    "operation_time": "2026-08-26T14:53:36+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\你的鋼門比較鬆弛 - 1.你的鋼門比較鬆弛(Av1500694345,P1).mp3",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\？PACK_Others_你的鋼門比較鬆弛 - 1.你的鋼門比較鬆弛(Av1500694345,P1).mp3",
+        "group_key": "Others\u001f.mp3",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 151297,
+          "mtime_ns": 1711820704000000000,
+          "file_id": 562949953579890,
+          "sha256": "f408ad3f2e28e1f2fb9019e683ea81f8065d8f63bb14889d67e4a215d25c2b28"
+        },
+        "new_fingerprint": {
+          "size": 151297,
+          "mtime_ns": 1711820704000000000,
+          "file_id": 562949953579890,
+          "sha256": "f408ad3f2e28e1f2fb9019e683ea81f8065d8f63bb14889d67e4a215d25c2b28"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\真是史.mp3",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\？PACK_Others_真是史.mp3",
+        "group_key": "Others\u001f.mp3",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 371008,
+          "mtime_ns": 1728151948000000000,
+          "file_id": 562949953579903,
+          "sha256": "4ab75787f83e3d173ecd935f48b6104dda7813ace20b448988bc77591289cb78"
+        },
+        "new_fingerprint": {
+          "size": 371008,
+          "mtime_ns": 1728151948000000000,
+          "file_id": 562949953579903,
+          "sha256": "4ab75787f83e3d173ecd935f48b6104dda7813ace20b448988bc77591289cb78"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\輕 舟 已 過3.mp3",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Others\\？PACK_Others_輕 舟 已 過3.mp3",
+        "group_key": "Others\u001f.mp3",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 1893411,
+          "mtime_ns": 1710860494000000000,
+          "file_id": 562949953579908,
+          "sha256": "c97c7c8f50be730f2d518fc031663973deb577571a299740f416c4d47fb73bbc"
+        },
+        "new_fingerprint": {
+          "size": 1893411,
+          "mtime_ns": 1710860494000000000,
+          "file_id": 562949953579908,
+          "sha256": "c97c7c8f50be730f2d518fc031663973deb577571a299740f416c4d47fb73bbc"
+        }
+      }
+    ],
+    "restored_count": 6,
+    "undo_sequence": 7,
+    "redone_count": 6,
+    "redone_at": "2026-08-27T11:10:47+08:00"
+  },
+  {
+    "operation_time": "2026-08-26T14:53:36+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Vocal\\1234.wav",
+        "new_path": "E:\\packs\\[Botanica] 点击输入文本PACK\\Vocal\\？PACK_Vocal_1234.wav",
+        "group_key": "Vocal\u001f.wav",
+        "success": true,
+        "error": ""
+      }
+    ],
+    "undone_at": "2026-08-26T14:54:09+08:00",
+    "restored_count": 0
+  },
+  {
+    "operation_time": "2026-08-26T17:17:14+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "E:\\packs\\[Amb] 8lakes&sea\\01.WAV",
+        "new_path": "E:\\packs\\[Amb] 8lakes&sea\\lakes&sea_Amb_01.WAV",
+        "group_key": "(root)\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2722348,
+          "mtime_ns": 1569075126000000000,
+          "file_id": 281474976733269,
+          "sha256": "be0ec7fc7073d5f27e119f3a79bf87190017d7289cb12bc44624ce53f359d3a5"
+        },
+        "new_fingerprint": {
+          "size": 2722348,
+          "mtime_ns": 1569075126000000000,
+          "file_id": 281474976733269,
+          "sha256": "be0ec7fc7073d5f27e119f3a79bf87190017d7289cb12bc44624ce53f359d3a5"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Amb] 8lakes&sea\\03.WAV",
+        "new_path": "E:\\packs\\[Amb] 8lakes&sea\\lakes&sea_Amb_03.WAV",
+        "group_key": "(root)\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2811948,
+          "mtime_ns": 1569075422000000000,
+          "file_id": 281474976733270,
+          "sha256": "576a5401c0e522016756683df3f1ba74cc44699deb81add54ab33b1a2ec6f1a8"
+        },
+        "new_fingerprint": {
+          "size": 2811948,
+          "mtime_ns": 1569075422000000000,
+          "file_id": 281474976733270,
+          "sha256": "576a5401c0e522016756683df3f1ba74cc44699deb81add54ab33b1a2ec6f1a8"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Amb] 8lakes&sea\\04.WAV",
+        "new_path": "E:\\packs\\[Amb] 8lakes&sea\\lakes&sea_Amb_04.WAV",
+        "group_key": "(root)\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2301996,
+          "mtime_ns": 1569075324000000000,
+          "file_id": 281474976733271,
+          "sha256": "d0217ca618849507f0af20cf34e97f2026328beb1528f2e079a87901daec34c7"
+        },
+        "new_fingerprint": {
+          "size": 2301996,
+          "mtime_ns": 1569075324000000000,
+          "file_id": 281474976733271,
+          "sha256": "d0217ca618849507f0af20cf34e97f2026328beb1528f2e079a87901daec34c7"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Amb] 8lakes&sea\\05.WAV",
+        "new_path": "E:\\packs\\[Amb] 8lakes&sea\\lakes&sea_Amb_05.WAV",
+        "group_key": "(root)\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2533932,
+          "mtime_ns": 1569075242000000000,
+          "file_id": 281474976733272,
+          "sha256": "4313a291cfa3f681b14467fec9790fa05fabe0960f1942724dcf3985def1f51b"
+        },
+        "new_fingerprint": {
+          "size": 2533932,
+          "mtime_ns": 1569075242000000000,
+          "file_id": 281474976733272,
+          "sha256": "4313a291cfa3f681b14467fec9790fa05fabe0960f1942724dcf3985def1f51b"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Amb] 8lakes&sea\\07.WAV",
+        "new_path": "E:\\packs\\[Amb] 8lakes&sea\\lakes&sea_Amb_07.WAV",
+        "group_key": "(root)\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2526252,
+          "mtime_ns": 1569075366000000000,
+          "file_id": 281474976733273,
+          "sha256": "86348df5539449f29cfa78a05a0f0f6f50526b5a5fd5bce7ec86e86fd3822154"
+        },
+        "new_fingerprint": {
+          "size": 2526252,
+          "mtime_ns": 1569075366000000000,
+          "file_id": 281474976733273,
+          "sha256": "86348df5539449f29cfa78a05a0f0f6f50526b5a5fd5bce7ec86e86fd3822154"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Amb] 8lakes&sea\\08.WAV",
+        "new_path": "E:\\packs\\[Amb] 8lakes&sea\\lakes&sea_Amb_08.WAV",
+        "group_key": "(root)\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 914476,
+          "mtime_ns": 1569075182000000000,
+          "file_id": 281474976733274,
+          "sha256": "30c119b018ba9b0c4c6ac9ec3d9f58de42c434cd0c6272882899f7b4801fa56a"
+        },
+        "new_fingerprint": {
+          "size": 914476,
+          "mtime_ns": 1569075182000000000,
+          "file_id": 281474976733274,
+          "sha256": "30c119b018ba9b0c4c6ac9ec3d9f58de42c434cd0c6272882899f7b4801fa56a"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Amb] 8lakes&sea\\10.WAV",
+        "new_path": "E:\\packs\\[Amb] 8lakes&sea\\lakes&sea_Amb_10.WAV",
+        "group_key": "(root)\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2839080,
+          "mtime_ns": 1569075126000000000,
+          "file_id": 281474976733275,
+          "sha256": "77369bdcd28c04628e6ce98da5c120d3c3133da7d52672cf7c321794e697b762"
+        },
+        "new_fingerprint": {
+          "size": 2839080,
+          "mtime_ns": 1569075126000000000,
+          "file_id": 281474976733275,
+          "sha256": "77369bdcd28c04628e6ce98da5c120d3c3133da7d52672cf7c321794e697b762"
+        }
+      },
+      {
+        "old_path": "E:\\packs\\[Amb] 8lakes&sea\\11.WAV",
+        "new_path": "E:\\packs\\[Amb] 8lakes&sea\\lakes&sea_Amb_11.WAV",
+        "group_key": "(root)\u001f.wav",
+        "success": true,
+        "error": "",
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 2702892,
+          "mtime_ns": 1569075278000000000,
+          "file_id": 281474976733276,
+          "sha256": "2fc1e043d78de387a67578a9d79eeb8a29b4837212d926c7e33c86851644fd4e"
+        },
+        "new_fingerprint": {
+          "size": 2702892,
+          "mtime_ns": 1569075278000000000,
+          "file_id": 281474976733276,
+          "sha256": "2fc1e043d78de387a67578a9d79eeb8a29b4837212d926c7e33c86851644fd4e"
+        }
+      }
+    ],
+    "restored_count": 32,
+    "undo_sequence": 6,
+    "redone_count": 32,
+    "redone_at": "2026-08-27T11:10:48+08:00"
+  },
+  {
+    "operation_time": "2026-08-27T11:10:05+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\CL_Drums_Full_Loop_01_150BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\Pack_Drums_Loops_01_150BPM.wav",
+        "group_key": "01_Drums\\Loops\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\RPS_Hyperpop_Full_Loop_Gmin_184BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\Pack_Drums_Loops_02_184BPM.wav",
+        "group_key": "01_Drums\\Loops\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "restored_count": 2,
+    "undo_sequence": 5,
+    "redone_count": 2,
+    "redone_at": "2026-08-27T11:10:50+08:00",
+    "undo_attempted_at": "2026-08-27T11:15:49+08:00"
+  },
+  {
+    "operation_time": "2026-08-27T11:13:48+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\01.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_01.wav",
+        "group_key": "01_Drums\\Loops\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "redo_source_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_01.wav"
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\ASD.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_02.wav",
+        "group_key": "01_Drums\\Loops\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": false,
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "redo_source_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_02.wav"
+      }
+    ],
+    "restored_count": 4,
+    "undo_sequence": 12,
+    "redone_count": 2,
+    "redone_at": "2026-08-27T13:06:14+08:00"
+  },
+  {
+    "operation_time": "2026-08-27T11:14:31+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\OneShots\\Kicks\\ColdLight_DistKick_165BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\OneShots\\Kicks\\demo_OneShots_Kicks_01.wav",
+        "group_key": "01_Drums\\OneShots\\Kicks\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800018365261500,
+          "file_id": 844424930608724,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800018365261500,
+          "file_id": 844424930608724,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": true,
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800018365261500,
+          "file_id": 844424930608724,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "restored_count": 1,
+    "undone_at": "2026-08-27T11:15:49+08:00",
+    "undo_sequence": 11
+  },
+  {
+    "operation_time": "2026-08-27T11:15:22+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\Chord_Vibe_F#min_135BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\demo_Associations_Chord_Vibe_F#min_135BPM.wav",
+        "group_key": "04_Associations\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800028490139800,
+          "file_id": 844424930608745,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800028490139800,
+          "file_id": 844424930608745,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": true,
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800028490139800,
+          "file_id": 844424930608745,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "restored_count": 1,
+    "undone_at": "2026-08-27T11:15:49+08:00",
+    "undo_sequence": 10
+  },
+  {
+    "operation_time": "2026-08-27T11:15:43+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\Chord_Vibe_F#min_135BPM.mid",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\demo_Associations_Chord_Vibe_F#min_135BPM.mid",
+        "group_key": "04_Associations\u001f.mid",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800027840221100,
+          "file_id": 844424930608744,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800027840221100,
+          "file_id": 844424930608744,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": true,
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800027840221100,
+          "file_id": 844424930608744,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "restored_count": 1,
+    "undone_at": "2026-08-27T11:15:48+08:00",
+    "undo_sequence": 9
+  },
+  {
+    "operation_time": "2026-08-27T13:05:42+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\01.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_01.wav",
+        "group_key": "01_Drums\\Loops\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": false,
+        "undo_source_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_01.wav",
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "redo_source_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\01.wav"
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\ASD.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_02.wav",
+        "group_key": "01_Drums\\Loops\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": false,
+        "undo_source_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_02.wav",
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "redo_source_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\ASD.wav"
+      }
+    ],
+    "restored_count": 2,
+    "undo_sequence": 13,
+    "redone_count": 2,
+    "redone_at": "2026-08-27T13:05:52+08:00"
+  },
+  {
+    "operation_time": "2026-08-27T13:06:08+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\Chord_Vibe_F#min_135BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\demo_04_Associations_01.wav",
+        "group_key": "04_Associations\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800028490139800,
+          "file_id": 844424930608745,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800028490139800,
+          "file_id": 844424930608745,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": true,
+        "undo_source_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\demo_04_Associations_01.wav",
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800028490139800,
+          "file_id": 844424930608745,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\Chord_Vibe_F#min_135BPM.mid",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\demo_04_Associations_01.mid",
+        "group_key": "04_Associations\u001f.mid",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800027840221100,
+          "file_id": 844424930608744,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800027840221100,
+          "file_id": 844424930608744,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "undone": true,
+        "undo_source_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\demo_04_Associations_01.mid",
+        "undo_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800027840221100,
+          "file_id": 844424930608744,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ],
+    "restored_count": 2,
+    "undone_at": "2026-08-27T13:06:20+08:00",
+    "undo_sequence": 14
+  },
+  {
+    "operation_time": "2026-08-27T13:06:43+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\03_MIDI\\Songs\\kokoro_140BPM.mid",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\03_MIDI\\Songs\\demo_03_MIDI_Songs_01_140BPM.mid",
+        "group_key": "03_MIDI\\Songs\u001f.mid",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800026737275400,
+          "file_id": 844424930608742,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800026737275400,
+          "file_id": 844424930608742,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\03_MIDI\\Songs\\Undertale_Another_Medium_130BPM.mid",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\03_MIDI\\Songs\\demo_03_MIDI_Songs_02_130BPM.mid",
+        "group_key": "03_MIDI\\Songs\u001f.mid",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800026065742200,
+          "file_id": 844424930608741,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800026065742200,
+          "file_id": 844424930608741,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ]
+  },
+  {
+    "operation_time": "2026-08-27T13:06:44+08:00",
+    "kind": "batch",
+    "items": [
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\03_MIDI\\Songs\\demo_03_MIDI_Songs_01_140BPM.mid",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\03_MIDI\\Songs\\demo_03_MIDI_Songs_01_140BPM.mid",
+        "group_key": "03_MIDI\\Songs\u001f.mid",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800026737275400,
+          "file_id": 844424930608742,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800026737275400,
+          "file_id": 844424930608742,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\03_MIDI\\Songs\\demo_03_MIDI_Songs_02_130BPM.mid",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\03_MIDI\\Songs\\demo_03_MIDI_Songs_02_130BPM.mid",
+        "group_key": "03_MIDI\\Songs\u001f.mid",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800026065742200,
+          "file_id": 844424930608741,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800026065742200,
+          "file_id": 844424930608741,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_01.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_01.wav",
+        "group_key": "01_Drums\\Loops\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800016461729300,
+          "file_id": 844424930608720,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_02.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\Loops\\demo_Drums_Loops_02.wav",
+        "group_key": "01_Drums\\Loops\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800017244135500,
+          "file_id": 844424930608721,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\OneShots\\Kicks\\ColdLight_DistKick_165BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\OneShots\\Kicks\\demo_OneShots_Kicks_01.wav",
+        "group_key": "01_Drums\\OneShots\\Kicks\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800018365261500,
+          "file_id": 844424930608724,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800018365261500,
+          "file_id": 844424930608724,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\OneShots\\Percussion\\ChinaClick_F_140BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\01_Drums\\OneShots\\Percussion\\demo_OneShots_Percussion_01.wav",
+        "group_key": "01_Drums\\OneShots\\Percussion\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800019420067800,
+          "file_id": 844424930608726,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800019420067800,
+          "file_id": 844424930608726,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\02_Instruments\\Marimba\\W2_Marimba_Loop_Aura_F_150BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\02_Instruments\\Marimba\\demo_02_Instruments_Marimba_01.wav",
+        "group_key": "02_Instruments\\Marimba\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800023719652100,
+          "file_id": 844424930608736,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800023719652100,
+          "file_id": 844424930608736,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\02_Instruments\\Pads\\BFNK_Pad_02_90BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\02_Instruments\\Pads\\demo_02_Instruments_Pads_01.wav",
+        "group_key": "02_Instruments\\Pads\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800020509901500,
+          "file_id": 844424930608729,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800020509901500,
+          "file_id": 844424930608729,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\02_Instruments\\Synths\\Arps\\KSHMR_Synth_Arp_06_Dm_90BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\02_Instruments\\Synths\\Arps\\demo_Synths_Arps_01.wav",
+        "group_key": "02_Instruments\\Synths\\Arps\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800021581242500,
+          "file_id": 844424930608732,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800021581242500,
+          "file_id": 844424930608732,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\02_Instruments\\Synths\\Chords\\GPUA_Synth_Chord_Am_128BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\02_Instruments\\Synths\\Chords\\demo_Synths_Chords_01.wav",
+        "group_key": "02_Instruments\\Synths\\Chords\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800022643766900,
+          "file_id": 844424930608734,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800022643766900,
+          "file_id": 844424930608734,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\03_MIDI\\Chords\\W2_Chords_Vibe_F#min_135BPM.mid",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\03_MIDI\\Chords\\demo_03_MIDI_Chords_01.mid",
+        "group_key": "03_MIDI\\Chords\u001f.mid",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800024862582600,
+          "file_id": 844424930608739,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800024862582600,
+          "file_id": 844424930608739,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\Chord_Vibe_F#min_135BPM.mid",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\demo_04_Associations_01.mid",
+        "group_key": "04_Associations\u001f.mid",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800027840221100,
+          "file_id": 844424930608744,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800027840221100,
+          "file_id": 844424930608744,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\Chord_Vibe_F#min_135BPM.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\04_Associations\\demo_04_Associations_01.wav",
+        "group_key": "04_Associations\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800028490139800,
+          "file_id": 844424930608745,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800028490139800,
+          "file_id": 844424930608745,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\05_Recordings\\Field\\260606-183659.wav",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\05_Recordings\\Field\\demo_05_Recordings_Field_01.wav",
+        "group_key": "05_Recordings\\Field\u001f.wav",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800029568158600,
+          "file_id": 844424930608748,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800029568158600,
+          "file_id": 844424930608748,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      {
+        "old_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\06_Reference\\鹿乃 - ウミユリ海底譚.flac",
+        "new_path": "D:\\Documents\\py\\Vibe\\namer\\demo_empty_tree\\06_Reference\\demo_06_Reference_01.flac",
+        "group_key": "06_Reference\u001f.flac",
+        "success": true,
+        "error": "",
+        "old_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800030652009000,
+          "file_id": 844424930608750,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "new_fingerprint": {
+          "size": 0,
+          "mtime_ns": 1787800030652009000,
+          "file_id": 844424930608750,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    ]
+  }
+]
