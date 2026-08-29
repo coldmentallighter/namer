@@ -1477,15 +1477,14 @@ def import_xlsx(xlsx_path: str | Path, group: NamingGroup,
                             matched_without_name, selected_sheet_name, detail_mode)
 
 
-def _unique_export_path(folder: Path, detail: bool = False) -> Path:
+def _unique_export_path(folder: Path) -> Path:
     base = folder.name or "root"
-    marker = ".detail" if detail else ""
-    candidate = folder.parent / f"{base}{marker}.ffnf.xlsx"
+    candidate = folder.parent / f"{base}.ffnf.xlsx"
     if not candidate.exists():
         return candidate
     index = 1
     while True:
-        candidate = folder.parent / f"{base}{marker}.ori{index:02d}.ffnf.xlsx"
+        candidate = folder.parent / f"{base}.ori{index:02d}.ffnf.xlsx"
         if not candidate.exists():
             return candidate
         index += 1
@@ -1616,8 +1615,7 @@ def collect_directory_statistics(root: str | Path, records: Sequence[FileRecord]
 
 
 def export_filename_tables(root: str | Path, selected_extensions: Iterable[str],
-                           include_hidden: bool = False, include_system: bool = False,
-                           mode: str = "compat") -> list[Path]:
+                           include_hidden: bool = False, include_system: bool = False) -> list[Path]:
     if Workbook is None:
         raise RuntimeError("需要安装 openpyxl 才能导出 XLSX")
     selected = {normalise_ext(ext).casefold() for ext in selected_extensions}
@@ -1630,7 +1628,6 @@ def export_filename_tables(root: str | Path, selected_extensions: Iterable[str],
     generated_tables: dict[str, Path] = {}
     for folder_text, records in sorted(by_folder.items(), key=lambda pair: natural_key(pair[0])):
         folder = Path(folder_text)
-        detail = str(mode).casefold() in {"detail", "detailed", "详细"}
         workbook = Workbook()
         workbook.remove(workbook.active)
         by_ext: dict[str, list[FileRecord]] = {}
@@ -1647,38 +1644,32 @@ def export_filename_tables(root: str | Path, selected_extensions: Iterable[str],
             used_titles.add(title)
             sheet = workbook.create_sheet(title)
             ordered_records = sorted(ext_records, key=lambda item: natural_key(item.stem))
-            if detail:
-                sheet.append(["SourceName", "NewName", "RelativePath", "Folder", "Extension", "SizeBytes", "ModifiedTime", "Association", "BPM", "Scale"])
-                for record in ordered_records:
-                    try:
-                        stat = Path(record.path).stat()
-                        size, modified = int(stat.st_size), datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds")
-                    except OSError:
-                        size, modified = "", ""
-                    sheet.append([record.stem, "", record.relative_folder, record.folder_name,
-                                  record.extension, size, modified, record.association_id,
-                                  record.bpm, ""])
-            else:
-                for row, record in enumerate(ordered_records, start=1):
-                    sheet.cell(row=row, column=1, value=record.stem)
-        detail = str(mode).casefold() in {"detail", "detailed", "详细"}
-        if detail:
-            stats = collect_directory_statistics(root, result.records, include_hidden, include_system)
-            metadata = workbook.create_sheet("Metadata")
-            metadata.append(["Field", "Value"])
-            metadata.append(["Root", stats["root"]])
-            metadata.append(["DirectoryCount", stats["directory_count"]])
-            metadata.append(["FileCount", stats["file_count"]])
-            metadata.append(["ContentDirectoryCount", stats["content_directory_count"]])
-            metadata.append(["AssociationCount", len(result.associations)])
-            summary = workbook.create_sheet("Summary")
-            summary.append(["RelativeFolder", "Path", "FileCount", "Extensions"])
-            for folder_info in stats["folders"]:
-                extension_text = ", ".join(f"{key}:{value}" for key, value in folder_info["extensions"].items())
-                summary.append([folder_info["relative_folder"], folder_info["path"], folder_info["file_count"], extension_text])
+            sheet.append(["SourceName", "NewName", "RelativePath", "Folder", "Extension", "SizeBytes", "ModifiedTime", "Association", "BPM", "Scale"])
+            for record in ordered_records:
+                try:
+                    stat = Path(record.path).stat()
+                    size, modified = int(stat.st_size), datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds")
+                except OSError:
+                    size, modified = "", ""
+                sheet.append([record.stem, "", record.relative_folder, record.folder_name,
+                              record.extension, size, modified, record.association_id,
+                              record.bpm, ""])
+        stats = collect_directory_statistics(root, result.records, include_hidden, include_system)
+        metadata = workbook.create_sheet("Metadata")
+        metadata.append(["Field", "Value"])
+        metadata.append(["Root", stats["root"]])
+        metadata.append(["DirectoryCount", stats["directory_count"]])
+        metadata.append(["FileCount", stats["file_count"]])
+        metadata.append(["ContentDirectoryCount", stats["content_directory_count"]])
+        metadata.append(["AssociationCount", len(result.associations)])
+        summary = workbook.create_sheet("Summary")
+        summary.append(["RelativeFolder", "Path", "FileCount", "Extensions"])
+        for folder_info in stats["folders"]:
+            extension_text = ", ".join(f"{key}:{value}" for key, value in folder_info["extensions"].items())
+            summary.append([folder_info["relative_folder"], folder_info["path"], folder_info["file_count"], extension_text])
         if not workbook.worksheets:
             continue
-        output = _unique_export_path(folder, detail)
+        output = _unique_export_path(folder)
         workbook.save(output)
         outputs.append(output)
         generated_tables[folder_text] = output

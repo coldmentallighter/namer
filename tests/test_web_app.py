@@ -176,15 +176,15 @@ class WebApiTests(unittest.TestCase):
             state = json.loads(response.read().decode("utf-8"))["state"]
         self.assertEqual(state["records"][0]["base_name"], "KeepThisEdit")
 
-    def test_detail_export_api_returns_statistics(self):
+    def test_export_api_returns_statistics(self):
         with tempfile.TemporaryDirectory() as temp_root:
             root = Path(temp_root) / "ExportRoot" / "Loops"
             root.mkdir(parents=True)
             (root / "Kick 01.wav").write_bytes(b"RIFF")
-            payload = self.post("/api/export", {"root": str(root.parent), "extensions": [".wav"], "mode": "detail"})
-            self.assertEqual(payload["export_mode"], "detail")
+            payload = self.post("/api/export", {"root": str(root.parent), "extensions": [".wav"]})
+            self.assertNotIn("export_mode", payload)
             self.assertGreaterEqual(payload["export_stats"]["file_count"], 1)
-            self.assertTrue(any(".detail.ffnf.xlsx" in path for path in payload["xlsx_outputs"]))
+            self.assertIn(str(root.parent / "Loops.ffnf.xlsx"), payload["xlsx_outputs"])
 
     def test_history_path_is_relative_to_source_directory(self):
         expected = Path(web_app.__file__).resolve().parent / "history" / "history.json"

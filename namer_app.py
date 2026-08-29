@@ -256,7 +256,7 @@ class NamerApp(_TkBase):
         ttk.Label(controls, text="导出根目录").pack(side="left")
         ttk.Entry(controls, textvariable=self.root_var, width=75).pack(side="left", padx=6, fill="x", expand=True)
         ttk.Button(controls, text="选择文件夹", command=self.choose_root).pack(side="left", padx=3)
-        ttk.Button(controls, text="扫描并刷新扩展名", command=lambda: self.scan(export_mode=True)).pack(side="left", padx=3)
+        ttk.Button(controls, text="扫描并刷新扩展名", command=lambda: self.scan(for_export=True)).pack(side="left", padx=3)
         ttk.Checkbutton(controls, text="包含隐藏文件", variable=self.export_hidden_var).pack(side="left", padx=5)
         ttk.Checkbutton(controls, text="包含系统文件", variable=self.export_system_var).pack(side="left", padx=5)
         self.export_ext_frame = ttk.LabelFrame(parent, text="导出扩展名")
@@ -279,20 +279,20 @@ class NamerApp(_TkBase):
             self.root_var.set(path)
             self.scan()
 
-    def scan(self, export_mode: bool = False) -> None:
+    def scan(self, for_export: bool = False) -> None:
         root = self.root_var.get().strip()
         if not root:
             messagebox.showwarning("需要根目录", "请选择或拖入一个文件夹。")
             return
         try:
             result = scan_folder(root,
-                                 self.export_hidden_var.get() if export_mode else self.include_hidden_var.get(),
-                                 self.export_system_var.get() if export_mode else self.include_system_var.get())
+                                 self.export_hidden_var.get() if for_export else self.include_hidden_var.get(),
+                                 self.export_system_var.get() if for_export else self.include_system_var.get())
         except Exception as exc:
             self.log("ERROR", f"扫描失败: {exc}")
             messagebox.showerror("扫描失败", str(exc))
             return
-        if export_mode:
+        if for_export:
             self.export_scan_result = result
             self._refresh_export_ext_controls(result)
             self.export_result.configure(text=f"可导出 {len(result.records)} 个文件")

@@ -137,10 +137,10 @@ class NamerCoreTests(unittest.TestCase):
         self.assertEqual(append_bpm_suffix("Loop", "150"), "Loop_150BPM")
         self.assertEqual(append_bpm_suffix("Loop_150BPM", "150"), "Loop_150BPM")
 
-    def test_detail_export_and_sheet_specific_import(self):
+    def test_export_and_sheet_specific_import(self):
         (self.root / "Drums&Loop" / "Tempo_128BPM.wav").write_bytes(b"RIFF")
-        output = export_filename_tables(self.root, [".wav", ".png"], mode="detail")
-        detail = next(path for path in output if path.name.endswith(".detail.ffnf.xlsx"))
+        output = export_filename_tables(self.root, [".wav", ".png"])
+        detail = next(path for path in output if path.name == "Drums&Loop.ori01.ffnf.xlsx")
         workbook = load_workbook(detail, read_only=True, data_only=True)
         self.assertIn("WAV", workbook.sheetnames)
         self.assertIn("Metadata", workbook.sheetnames)
@@ -490,7 +490,7 @@ class NamerCoreTests(unittest.TestCase):
         wb = load_workbook(output, read_only=True)
         self.assertIn("WAV", wb.sheetnames)
         self.assertIn("PNG", wb.sheetnames)
-        values = [row[0] for row in wb["WAV"].iter_rows(values_only=True)]
+        values = [row[0] for row in wb["WAV"].iter_rows(values_only=True)][1:]
         self.assertEqual(values, sorted(values, key=natural_key))
         wb.close()
         # A second export must advance to ori02 and ignore the first generated sheet.

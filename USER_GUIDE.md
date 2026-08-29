@@ -444,16 +444,13 @@ Folder.ori100.ffnf.xlsx
 
 `.ori` 编号从 `01` 开始，超过 `99` 后继续使用 `100`、`101` 等，不会覆盖任何旧表格。
 
-### 11.5 兼容导出与详细导出
+### 11.5 XLSX 导出
 
-导出页的“导出格式”提供两种模式：
-
-- **兼容导出**：文件名为 `<目录>.ffnf.xlsx`，每个扩展名工作表只有 A 列文件名，适合按当前组文件顺序导入。
-- **详细导出**：文件名为 `<目录>.detail.ffnf.xlsx`，冲突时为 `<目录>.detail.ori01.ffnf.xlsx`。扩展名工作表包含 `SourceName`、`NewName`、相对路径、大小、修改时间、同 stem 关联信息、`BPM` 和空白 `Scale` 列，并增加 `Metadata`、`Summary` 工作表。
+导出页统一生成详细 XLSX。文件名为 `<目录>.ffnf.xlsx`，冲突时依次使用 `<目录>.ori01.ffnf.xlsx`、`<目录>.ori02.ffnf.xlsx` 等。扩展名工作表包含 `SourceName`、`NewName`、相对路径、大小、修改时间、同 stem 关联信息、`BPM` 和空白 `Scale` 列，并增加 `Metadata`、`Summary` 工作表。
 
 详细表格用于重命名时，只编辑对应扩展名工作表的 B 列 `NewName`；A 列 `SourceName` 用于在当前命名组内精确匹配。B 列可以使用 `{bpm}` 和 `{scale}`，例如 `Pad_{scale}_{bpm}`；`BPM` 列默认由文件 metadata/名称识别，`Scale` 列留空供手动填写。空的占位字段会被移除，B 列为空或展开后为空的行会跳过。导入时软件会按当前组扩展名自动选择工作表，不依赖工作表排列顺序。`Metadata` 和 `Summary` 仅供查看，不作为名称输入。
 
-导出结果区域会显示总目录数、文件数、内容目录数和空目录数。详细导出仍会自动排除所有 `.ffnf.xlsx`、`.detail.ffnf.xlsx` 和 `.ori` 变体。
+导出结果区域会显示总目录数、文件数、内容目录数和空目录数。导出会自动排除所有 `.ffnf.xlsx` 和 `.ori` 变体。
 
 ## 12. 目录层级映射、解析与跨格式关联
 

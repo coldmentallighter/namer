@@ -1176,10 +1176,9 @@ class Handler(BaseHTTPRequestHandler):
         payload = _json_body(self)
         root = str(payload.get("root", STATE.root)).strip()
         selected = payload.get("extensions", [])
-        export_mode = str(payload.get("mode", "compat") or "compat")
         root_path = Path(root).expanduser().resolve()
         structure_existed = any((root_path / name).exists() for name in ("Structure.ffnf.txt", "filetree.txt"))
-        outputs = export_filename_tables(root, selected, bool(payload.get("include_hidden", False)), bool(payload.get("include_system", False)), export_mode)
+        outputs = export_filename_tables(root, selected, bool(payload.get("include_hidden", False)), bool(payload.get("include_system", False)))
         export_stats = collect_directory_statistics(root, include_hidden=bool(payload.get("include_hidden", False)), include_system=bool(payload.get("include_system", False)))
         with STATE.lock:
             xlsx_outputs = [output for output in outputs if output.suffix.casefold() == ".xlsx"]
@@ -1196,7 +1195,6 @@ class Handler(BaseHTTPRequestHandler):
             "xlsx_outputs": [str(output) for output in xlsx_outputs],
             "structure_output": str(structure_outputs[0]) if structure_outputs else "",
             "filetree_output": next((str(output) for output in structure_outputs if output.name.casefold() == "filetree.txt"), ""),
-            "export_mode": export_mode,
             "export_stats": export_stats,
             "state": _state_json(),
         })

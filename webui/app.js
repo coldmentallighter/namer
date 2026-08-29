@@ -244,8 +244,8 @@
     $("logBody").scrollTop = $("logBody").scrollHeight;
   }
 
-  async function scan(rootOverride = null, exportMode = false) {
-    if (exportMode) {
+  async function scan(rootOverride = null, forExport = false) {
+    if (forExport) {
       const root = rootOverride || $("rootPath").value.trim();
       try {
         const payload = await api("/api/export-scan", jsonOptions({ root, include_hidden: $("exportHidden").checked, include_system: $("exportSystem").checked }));
@@ -350,12 +350,12 @@
     const extensions = Object.keys(state.exportExtensions).filter((ext) => state.exportExtensions[ext]);
     if (!extensions.length) { showToast("至少选择一种导出扩展名", true); return; }
     try {
-      const payload = await api("/api/export", jsonOptions({ root: $("rootPath").value.trim(), extensions, include_hidden: $("exportHidden").checked, include_system: $("exportSystem").checked, mode: $("exportMode").value }));
+      const payload = await api("/api/export", jsonOptions({ root: $("rootPath").value.trim(), extensions, include_hidden: $("exportHidden").checked, include_system: $("exportSystem").checked }));
       applyState(payload.state);
       $("exportResults").className = "export-results";
       const xlsxOutputs = payload.xlsx_outputs || payload.outputs.filter((path) => path.toLowerCase().endsWith(".xlsx"));
       const structure = payload.structure_output || payload.outputs.find((path) => path.toLowerCase().endsWith("structure.ffnf.txt"));
-      const outputRows = payload.outputs.map((path) => `<div class="result-file"><span class="result-kind">${path.toLowerCase().endsWith(".xlsx") ? (payload.export_mode === "detail" ? "详细" : "XLSX") : "结构"}</span>${esc(path)}</div>`).join("");
+      const outputRows = payload.outputs.map((path) => `<div class="result-file"><span class="result-kind">${path.toLowerCase().endsWith(".xlsx") ? "XLSX" : "结构"}</span>${esc(path)}</div>`).join("");
       const stats = payload.export_stats || {};
       const statsRow = `<div class="result-file"><span class="result-kind">统计</span>${esc(stats.directory_count || 0)} 个目录 · ${esc(stats.file_count || 0)} 个文件 · ${esc(stats.content_directory_count || 0)} 个内容目录 · ${esc(stats.empty_directory_count || 0)} 个空目录</div>`;
       $("exportResults").innerHTML = payload.outputs.length ? statsRow + outputRows : "没有符合条件的文件夹";
