@@ -39,14 +39,6 @@ _INITIAL_SOURCES = {"", "stem", "directory.meta", "directory.group", "directory.
 RESOURCE_WORKFLOW_ROOT = Path(__file__).with_name("workflows")
 
 
-def _read_builtin_workflow(folder: str) -> dict[str, Any]:
-    path = RESOURCE_WORKFLOW_ROOT / folder / WORKFLOW_FILE_NAME
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"内置工作流资源不存在或无效: {path}") from exc
-
-
 def _normalise_template(template: Any) -> list[dict[str, str]]:
     if isinstance(template, str):
         parts: list[dict[str, str]] = []
@@ -565,25 +557,97 @@ def validate_workflow(value: dict[str, Any], *, allow_builtin: bool = True) -> d
     return result
 
 
-DEFAULT_WORKFLOW = _read_builtin_workflow("default")
-SAMPLE_PACK_WORKFLOW = _read_builtin_workflow("sample-pack")
-DATA_TABLE_WORKFLOW = _read_builtin_workflow("data-table")
-IMAGE_WORKFLOW = _read_builtin_workflow("image-assets")
-WALLPAPER_WORKFLOW = _read_builtin_workflow("wallpaper-assets")
-BUILTIN_WORKFLOWS = {
-    workflow["id"]: workflow
-    for workflow in (
-        DEFAULT_WORKFLOW,
-        SAMPLE_PACK_WORKFLOW,
-        DATA_TABLE_WORKFLOW,
-        IMAGE_WORKFLOW,
-        WALLPAPER_WORKFLOW,
-    )
-}
-
-
 def workflow_field_map(workflow: dict[str, Any]) -> dict[str, dict[str, Any]]:
     return {field["id"]: field for field in workflow.get("fields", [])}
+
+
+CORE_FALLBACK_WORKFLOW = validate_workflow({
+    "schema_version": WORKFLOW_SCHEMA_VERSION,
+    "id": "core-fallback",
+    "name": "基础模式",
+    "version": "1.0.0",
+    "description": "未安装工作流时保留原文件名，供核心工作台继续运行。",
+    "builtin": True,
+    "kind": "core",
+    "separator": "_",
+    "name_modes": ["original"],
+    "fields": [
+        {
+            "id": "name",
+            "label": "名称",
+            "scope": "record",
+            "kind": "text",
+            "initial_source": "stem",
+        },
+    ],
+    "template": [{"field": "name"}],
+    "metadata_providers": [],
+    "actions": [],
+    "suffix_modes": {},
+    "suffix_options": [],
+    "numbering": {"enabled": False, "field": ""},
+})
+
+
+def workflow_root_signature(root: str | Path = RESOURCE_WORKFLOW_ROOT) -> tuple[tuple[str, int, int], ...]:
+    """Return a cheap manifest fingerprint for runtime plug-in monitoring."""
+    root = Path(root)
+    try:
+        root_stat = root.stat()
+        signature: list[tuple[str, int, int]] = [(".", root_stat.st_mtime_ns, root_stat.st_size)]
+        folders = sorted((item for item in root.iterdir() if item.is_dir()), key=lambda item: item.name.casefold())
+    except OSError:
+        return ((".", -1, -1),)
+    for folder in folders:
+        manifest = folder / WORKFLOW_FILE_NAME
+        try:
+            stat = manifest.stat()
+            signature.append((folder.name, stat.st_mtime_ns, stat.st_size))
+        except OSError:
+            signature.append((folder.name, -1, -1))
+    return tuple(signature)
+
+
+def discover_workflows(root: str | Path = RESOURCE_WORKFLOW_ROOT) -> tuple[dict[str, dict[str, Any]], list[dict[str, str]]]:
+    """Load every workflow directory independently and isolate broken plug-ins."""
+    root = Path(root)
+    workflows: dict[str, dict[str, Any]] = {}
+    errors: list[dict[str, str]] = []
+    try:
+        folders = sorted((item for item in root.iterdir() if item.is_dir()), key=lambda item: item.name.casefold())
+    except OSError as exc:
+        errors.append({
+            "folder": "",
+            "path": str(root),
+            "error": f"工作流目录不可用: {exc}",
+        })
+        return workflows, errors
+    for folder in folders:
+        manifest = folder / WORKFLOW_FILE_NAME
+        if not manifest.is_file():
+            errors.append({
+                "folder": folder.name,
+                "path": str(manifest),
+                "error": "缺少 workflow.json",
+            })
+            continue
+        try:
+            raw = json.loads(manifest.read_text(encoding="utf-8"))
+            if not isinstance(raw, dict):
+                raise ValueError("工作流内容必须是 JSON 对象")
+            raw["builtin"] = True
+            workflow = validate_workflow(raw)
+            workflow_id = workflow["id"]
+            if workflow_id in workflows:
+                raise ValueError(f"工作流 id 重复: {workflow_id}")
+            workflows[workflow_id] = workflow
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
+            errors.append({
+                "folder": folder.name,
+                "path": str(manifest),
+                "error": str(exc),
+            })
+    return workflows, errors
 
 
 def workflow_summary(workflow: dict[str, Any]) -> dict[str, Any]:
@@ -673,14 +737,103 @@ def copy_workflow(workflow: dict[str, Any], existing_ids: set[str]) -> dict[str,
 
 
 class WorkflowCatalog:
-    """Persist user workflows and global preferences in one small config file."""
+    """Monitor installed workflow plug-ins and persist user-owned workflows."""
 
-    def __init__(self, config_path: str | Path) -> None:
+    def __init__(self, config_path: str | Path,
+                 workflow_root: str | Path | list[str | Path] | tuple[str | Path, ...] = RESOURCE_WORKFLOW_ROOT) -> None:
         self.path = Path(config_path)
+        raw_roots = [workflow_root] if isinstance(workflow_root, (str, Path)) else list(workflow_root)
+        roots: list[Path] = []
+        seen_roots: set[str] = set()
+        for item in raw_roots:
+            root = Path(item)
+            key = str(root.resolve()).casefold()
+            if key not in seen_roots:
+                roots.append(root)
+                seen_roots.add(key)
+        self.workflow_roots = tuple(roots or [RESOURCE_WORKFLOW_ROOT])
+        self.workflow_root = self.workflow_roots[0]
         self.theme = "light"
         self.current_workflow = "default"
+        self.builtin_workflows: dict[str, dict[str, Any]] = {}
         self.user_workflows: dict[str, dict[str, Any]] = {}
+        self.load_errors: list[dict[str, str]] = []
+        self.config_errors: list[dict[str, str]] = []
+        self.revision = 0
+        self._root_signature: tuple[tuple[str, tuple[tuple[str, int, int], ...]], ...] | None = None
+        self.refresh(force=True)
         self.load()
+
+    def _actual_ids(self) -> set[str]:
+        return set(self.builtin_workflows) | set(self.user_workflows)
+
+    def _resolve_current(self, requested: str | None) -> str:
+        wanted = str(requested or "")
+        actual_ids = self._actual_ids()
+        if wanted in actual_ids:
+            return wanted
+        if "default" in actual_ids:
+            return "default"
+        if self.builtin_workflows:
+            return next(iter(self.builtin_workflows))
+        if self.user_workflows:
+            return next(iter(self.user_workflows))
+        return CORE_FALLBACK_WORKFLOW["id"]
+
+    def refresh(self, *, force: bool = False) -> dict[str, Any]:
+        signature = tuple(
+            (str(root), workflow_root_signature(root)) for root in self.workflow_roots
+        )
+        if not force and signature == self._root_signature:
+            return {
+                "changed": False,
+                "added": [],
+                "removed": [],
+                "updated": [],
+                "current_changed": False,
+                "revision": self.revision,
+            }
+        previous = self.builtin_workflows
+        previous_errors = self.load_errors
+        previous_current = self.current_workflow
+        discovered: dict[str, dict[str, Any]] = {}
+        errors: list[dict[str, str]] = []
+        for root in self.workflow_roots:
+            root_workflows, root_errors = discover_workflows(root)
+            errors.extend(root_errors)
+            for workflow_id, workflow in root_workflows.items():
+                if workflow_id in discovered:
+                    errors.append({
+                        "folder": workflow_id,
+                        "path": str(root),
+                        "error": f"工作流 id 与其他安装目录冲突: {workflow_id}",
+                    })
+                    continue
+                discovered[workflow_id] = workflow
+        previous_ids = set(previous)
+        discovered_ids = set(discovered)
+        added = sorted(discovered_ids - previous_ids)
+        removed = sorted(previous_ids - discovered_ids)
+        updated = sorted(
+            workflow_id for workflow_id in previous_ids & discovered_ids
+            if previous[workflow_id] != discovered[workflow_id]
+        )
+        changed = bool(added or removed or updated or previous_errors != errors)
+        self.builtin_workflows = discovered
+        self.load_errors = errors
+        self._root_signature = signature
+        self.current_workflow = self._resolve_current(self.current_workflow)
+        current_changed = previous_current != self.current_workflow
+        if changed or current_changed:
+            self.revision += 1
+        return {
+            "changed": changed or current_changed,
+            "added": added,
+            "removed": removed,
+            "updated": updated,
+            "current_changed": current_changed,
+            "revision": self.revision,
+        }
 
     def load(self) -> None:
         try:
@@ -691,7 +844,8 @@ class WorkflowCatalog:
             raw = {}
         self.theme = raw.get("theme", "light") if raw.get("theme") in {"light", "dark"} else "light"
         current = str(raw.get("current_workflow", "default"))
-        self.current_workflow = current
+        self.user_workflows.clear()
+        self.config_errors.clear()
         loaded = raw.get("workflows", {})
         if isinstance(loaded, list):
             loaded = {str(item.get("id")): item for item in loaded if isinstance(item, dict)}
@@ -701,27 +855,48 @@ class WorkflowCatalog:
                     continue
                 try:
                     normalized = validate_workflow(workflow, allow_builtin=False)
-                except (TypeError, ValueError):
+                except (TypeError, ValueError) as exc:
+                    self.config_errors.append({
+                        "folder": "config.json",
+                        "path": str(self.path),
+                        "error": f"用户工作流 {workflow_id}: {exc}",
+                    })
                     continue
                 normalized["id"] = str(workflow_id) if _FIELD_ID.fullmatch(str(workflow_id)) else normalized["id"]
                 self.user_workflows[normalized["id"]] = normalized
-        if self.current_workflow not in self.all_ids():
-            self.current_workflow = "default"
+        self.current_workflow = self._resolve_current(current)
 
     def all_ids(self) -> set[str]:
-        return set(BUILTIN_WORKFLOWS) | set(self.user_workflows)
+        self.refresh()
+        actual_ids = self._actual_ids()
+        return actual_ids or {CORE_FALLBACK_WORKFLOW["id"]}
 
     def all(self) -> list[dict[str, Any]]:
-        return [copy.deepcopy(workflow) for workflow in BUILTIN_WORKFLOWS.values()] + [
+        self.refresh()
+        workflows = [copy.deepcopy(workflow) for workflow in self.builtin_workflows.values()] + [
             copy.deepcopy(workflow) for workflow in self.user_workflows.values()
         ]
+        return workflows or [copy.deepcopy(CORE_FALLBACK_WORKFLOW)]
 
     def get(self, workflow_id: str | None) -> dict[str, Any]:
+        self.refresh()
         wanted = str(workflow_id or self.current_workflow)
-        workflow = BUILTIN_WORKFLOWS.get(wanted) or self.user_workflows.get(wanted)
+        workflow = self.builtin_workflows.get(wanted) or self.user_workflows.get(wanted)
+        if workflow is None and not self._actual_ids() and wanted == CORE_FALLBACK_WORKFLOW["id"]:
+            workflow = CORE_FALLBACK_WORKFLOW
         if workflow is None:
             raise KeyError(f"工作流不存在: {wanted}")
         return copy.deepcopy(workflow)
+
+    def diagnostics(self) -> list[dict[str, str]]:
+        self.refresh()
+        return copy.deepcopy(self.load_errors + self.config_errors)
+
+    def is_builtin(self, workflow_id: str) -> bool:
+        self.refresh()
+        return workflow_id in self.builtin_workflows or (
+            workflow_id == CORE_FALLBACK_WORKFLOW["id"] and not self._actual_ids()
+        )
 
     def save(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -743,6 +918,7 @@ class WorkflowCatalog:
         return self.get(workflow_id)
 
     def upsert_import(self, workflow: dict[str, Any], strategy: str = "copy") -> tuple[dict[str, Any], bool]:
+        self.refresh()
         workflow = copy.deepcopy(workflow)
         # Built-in definitions can be exported as examples, but an imported
         # copy is always user-owned and editable.
@@ -755,15 +931,30 @@ class WorkflowCatalog:
             workflow = copy_workflow(workflow, self.all_ids())
         self.user_workflows[workflow["id"]] = workflow
         self.current_workflow = workflow["id"]
+        self.revision += 1
         self.save()
         return copy.deepcopy(workflow), existing
 
+    def upsert_user_workflow(self, workflow: dict[str, Any]) -> dict[str, Any]:
+        workflow = copy.deepcopy(workflow)
+        workflow["builtin"] = False
+        workflow = validate_workflow(workflow, allow_builtin=False)
+        if self.is_builtin(workflow["id"]):
+            raise ValueError("内置工作流不可直接覆盖，请先导入为副本")
+        self.user_workflows[workflow["id"]] = workflow
+        self.current_workflow = workflow["id"]
+        self.revision += 1
+        self.save()
+        return copy.deepcopy(workflow)
+
     def delete(self, workflow_id: str) -> None:
-        if workflow_id in BUILTIN_WORKFLOWS:
+        self.refresh()
+        if self.is_builtin(workflow_id):
             raise ValueError("内置工作流不可删除")
         if workflow_id not in self.user_workflows:
             raise KeyError(f"工作流不存在: {workflow_id}")
         del self.user_workflows[workflow_id]
         if self.current_workflow == workflow_id:
-            self.current_workflow = "default"
+            self.current_workflow = self._resolve_current(None)
+        self.revision += 1
         self.save()

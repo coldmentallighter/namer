@@ -14,16 +14,34 @@
   let audioDuration = 0;
   let pendingSeekRatio = null;
   let seekingAudio = false;
+  let workflowRevision = 0;
+  let workflowRefreshPending = false;
 
   function startClientLifecycle() {
-    const heartbeat = () => {
-      fetch("/api/client-heartbeat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-        cache: "no-store",
-        keepalive: true,
-      }).catch(() => {});
+    const heartbeat = async () => {
+      try {
+        const response = await fetch("/api/client-heartbeat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+          cache: "no-store",
+          keepalive: true,
+        });
+        const payload = await response.json();
+        const nextRevision = Number(payload.workflow_revision || 0);
+        if (!nextRevision || nextRevision === workflowRevision) return;
+        const hadRevision = workflowRevision > 0;
+        if (!hadRevision) { workflowRevision = nextRevision; return; }
+        if (workflowRefreshPending) return;
+        workflowRefreshPending = true;
+        try {
+          const stateResponse = await fetch("/api/state", { cache: "no-store" });
+          const statePayload = await stateResponse.json();
+          if (statePayload.ok && statePayload.state) applyState(statePayload.state);
+        } finally {
+          workflowRefreshPending = false;
+        }
+      } catch (_error) {}
     };
     heartbeat();
     window.setInterval(heartbeat, 2000);
@@ -108,6 +126,7 @@
 
   function applyState(next) {
     state.data = next;
+    workflowRevision = Number(next.workflow?.revision || workflowRevision || 0);
     if (next.config?.theme && document.documentElement.dataset.theme !== next.config.theme) applyTheme(next.config.theme);
     const extensions = next.extensions || {};
     const enabledExtensions = next.extension_enabled || {};

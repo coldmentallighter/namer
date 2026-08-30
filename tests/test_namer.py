@@ -33,7 +33,26 @@ from namer_core import (
 from workflow_modules.image_assets import read_image_dimensions
 from workflow_modules.sample_pack import append_bpm_suffix, detect_bpm
 from workflow_metadata import parse_workflow_filename, read_workflow_metadata
-from workflow_config import BUILTIN_WORKFLOWS, SAMPLE_PACK_WORKFLOW
+from workflow_config import CORE_FALLBACK_WORKFLOW, discover_workflows, validate_workflow
+
+
+INSTALLED_WORKFLOWS, _WORKFLOW_ERRORS = discover_workflows()
+DEFAULT_TEST_WORKFLOW = INSTALLED_WORKFLOWS.get("default", CORE_FALLBACK_WORKFLOW)
+SAMPLE_PACK_WORKFLOW = INSTALLED_WORKFLOWS.get("sample-pack")
+IMAGE_METADATA_WORKFLOW = validate_workflow({
+    "id": "image-metadata-test",
+    "name": "Image metadata test",
+    "fields": [{"id": "name", "label": "Name", "scope": "record", "kind": "text"}],
+    "template": [{"field": "name"}],
+    "metadata_providers": [{"provider": "image_dimensions"}],
+})
+SAMPLE_METADATA_WORKFLOW = validate_workflow({
+    "id": "sample-metadata-test",
+    "name": "Sample metadata test",
+    "fields": [{"id": "name", "label": "Name", "scope": "record", "kind": "text"}],
+    "template": [{"field": "name"}],
+    "metadata_providers": [{"provider": "sample_pack"}],
+})
 
 
 class NamerCoreTests(unittest.TestCase):
@@ -111,26 +130,26 @@ class NamerCoreTests(unittest.TestCase):
             + b"\x08\x02\x00\x00\x00"
         )
         self.assertNotIn("image", read_workflow_metadata(
-            BUILTIN_WORKFLOWS["default"], signature_image, self.root
+            DEFAULT_TEST_WORKFLOW, signature_image, self.root
         ))
         self.assertNotIn("sample_pack", read_workflow_metadata(
-            BUILTIN_WORKFLOWS["sample-pack"], signature_image, self.root
+            SAMPLE_METADATA_WORKFLOW, signature_image, self.root
         ))
         image_metadata = read_workflow_metadata(
-            BUILTIN_WORKFLOWS["image-assets"], signature_image, self.root
+            IMAGE_METADATA_WORKFLOW, signature_image, self.root
         )
         self.assertEqual(image_metadata["image"]["aspect_ratio"], "4:3")
         unknown_sample = self.root / "Drums&Loop" / "Loop_128.bin"
         unknown_sample.write_bytes(b"not a format-specific header")
         sample_metadata = read_workflow_metadata(
-            BUILTIN_WORKFLOWS["sample-pack"], unknown_sample, self.root
+            SAMPLE_METADATA_WORKFLOW, unknown_sample, self.root
         )
         self.assertEqual(sample_metadata["sample_pack"]["bpm"], "128")
         self.assertNotIn("sample_pack", read_workflow_metadata(
-            BUILTIN_WORKFLOWS["default"], unknown_sample, self.root
+            DEFAULT_TEST_WORKFLOW, unknown_sample, self.root
         ))
         image_metadata = read_workflow_metadata(
-            BUILTIN_WORKFLOWS["image-assets"], self.root / "Drums&Loop" / "中文 #&-_.png", self.root
+            IMAGE_METADATA_WORKFLOW, self.root / "Drums&Loop" / "中文 #&-_.png", self.root
         )
         self.assertNotIn("image", image_metadata)
 
@@ -167,6 +186,8 @@ class NamerCoreTests(unittest.TestCase):
         self.assertEqual(wav_group.records[0].associated_extensions, [".mid", ".wav"])
 
     def test_filename_parse_template_and_auto_preview(self):
+        if SAMPLE_PACK_WORKFLOW is None:
+            self.skipTest("未安装工作流：sample-pack")
         parsed = parse_filename("Loop_Drum_03", "{type}_{name}_{number}")
         self.assertTrue(parsed["matched"])
         self.assertEqual(parsed["fields"]["number"], "03")
@@ -187,7 +208,7 @@ class NamerCoreTests(unittest.TestCase):
             + b"\x08\x02\x00\x00\x00"
         )
         self.assertEqual(read_image_dimensions(image), (1920, 1080))
-        metadata = read_workflow_metadata(BUILTIN_WORKFLOWS["image-assets"], image, self.root)
+        metadata = read_workflow_metadata(IMAGE_METADATA_WORKFLOW, image, self.root)
         self.assertEqual(metadata["file"]["extension"], "png")
         self.assertEqual(metadata["image"]["orientation"], "landscape")
         self.assertEqual(metadata["image"]["aspect_ratio"], "16:9")
@@ -201,7 +222,7 @@ class NamerCoreTests(unittest.TestCase):
         )
         scanned = scan_folder(
             self.root,
-            metadata_reader=lambda path, root: read_workflow_metadata(BUILTIN_WORKFLOWS["image-assets"], path, root),
+            metadata_reader=lambda path, root: read_workflow_metadata(IMAGE_METADATA_WORKFLOW, path, root),
         )
         record = next(item for item in scanned.records if item.path == str(portrait))
         self.assertEqual(record.metadata["image"]["orientation"], "portrait")
@@ -220,7 +241,7 @@ class NamerCoreTests(unittest.TestCase):
                 + width.to_bytes(4, "big") + height.to_bytes(4, "big")
                 + b"\x08\x02\x00\x00\x00"
             )
-            metadata = read_workflow_metadata(BUILTIN_WORKFLOWS["image-assets"], image, self.root)["image"]
+            metadata = read_workflow_metadata(IMAGE_METADATA_WORKFLOW, image, self.root)["image"]
             self.assertEqual(metadata["aspect_ratio_token"], expected_token, filename)
             self.assertEqual(metadata["aspect_ratio_exact"], expected_exact, filename)
 

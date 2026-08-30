@@ -229,6 +229,8 @@ class WorkflowApiTests(unittest.TestCase):
         self.assertEqual(statuses[".txt"], "Skipped")
 
     def test_image_workflow_suggests_orientation_and_safe_aspect_ratio(self):
+        if "image-assets" not in web_app.STATE.workflow_catalog.all_ids():
+            self.skipTest("未安装工作流：image-assets")
         root = Path(self.temp.name) / "ImageRoot"
         root.mkdir()
         (root / "Wide.png").write_bytes(
@@ -257,6 +259,8 @@ class WorkflowApiTests(unittest.TestCase):
         self.assertIn("横屏_16x9_Wide.png", final_record["target_name"])
 
     def test_image_workflow_snaps_complex_ratio_in_preview(self):
+        if "image-assets" not in web_app.STATE.workflow_catalog.all_ids():
+            self.skipTest("未安装工作流：image-assets")
         root = Path(self.temp.name) / "ComplexImageRoot"
         root.mkdir()
         image = root / "UltraWide.png"
@@ -272,6 +276,8 @@ class WorkflowApiTests(unittest.TestCase):
         self.assertEqual(record["workflow_candidates"]["aspect_ratio"], ["21x9"])
 
     def test_workflow_fill_applies_all_image_candidates_in_one_request(self):
+        if "image-assets" not in web_app.STATE.workflow_catalog.all_ids():
+            self.skipTest("未安装工作流：image-assets")
         root = Path(self.temp.name) / "ImageFillRoot"
         root.mkdir()
         (root / "Wide.png").write_bytes(

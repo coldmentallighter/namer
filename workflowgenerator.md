@@ -265,4 +265,4 @@ action 未执行时不会改变目标名称；执行后会记录在文件级 wor
 - `vocabularies.json`
 - `examples.json`
 
-包中的 `workflow.json` 仍必须通过同一套 schema 校验。内置工作流（`default`、`sample-pack`、`data-table`、`image-assets`、`wallpaper-assets`）只能作为参考，不能直接声明为新的内置工作流或覆盖原文件。
+包中的 `workflow.json` 仍必须通过同一套 schema 校验。安装型工作流放在 `workflows/<唯一目录>/workflow.json`，程序会动态发现任意数量的目录插件；目录名不需要写入代码清单。工作流 ID 必须唯一，无效或冲突的插件会被隔离，不能覆盖其他已安装工作流。

@@ -49,7 +49,7 @@ from namer_core import (
     validate_filename,
 )
 from workflow_config import (
-    BUILTIN_WORKFLOWS,
+    RESOURCE_WORKFLOW_ROOT,
     WorkflowCatalog,
     load_workflow_package,
     package_workflow,
@@ -96,12 +96,16 @@ class AppState:
         self.directory_mapping_auto: bool = True
         self.parse_template: str = "auto"
         self.parse_use_name: bool = False
-        self.workflow_catalog = WorkflowCatalog(APP_ROOT / "config.json")
+        self.workflow_catalog = WorkflowCatalog(
+            APP_ROOT / "config.json",
+            (RESOURCE_WORKFLOW_ROOT, APP_ROOT / "workflows"),
+        )
         self.workflow_id: str = self.workflow_catalog.current_workflow
+        self.workflow_snapshot: dict[str, Any] = self.workflow_catalog.get(self.workflow_id)
         self.workflow_values: dict[str, str] = {}
         self.workflow_candidates: dict[str, list[str]] = {}
         self.workflow_suffix_mode: str = ""
-        workflow_numbering = self.workflow_catalog.get(self.workflow_id).get("numbering", {})
+        workflow_numbering = self.workflow_snapshot.get("numbering", {})
         if workflow_numbering.get("enabled"):
             self.numeric_start = int(workflow_numbering.get("start", self.numeric_start))
             self.numeric_width = max(1, int(workflow_numbering.get("width", self.numeric_width)))
@@ -118,6 +122,11 @@ class AppState:
         self.excel_skipped: dict[str, set[str]] = {}
         self.association_leaders: dict[str, str] = {}
         self.logs: list[LogEntry] = []
+        self.workflow_diagnostic_keys: set[tuple[str, str]] = set()
+        for issue in self.workflow_catalog.diagnostics():
+            key = (issue.get("path", ""), issue.get("error", ""))
+            self.workflow_diagnostic_keys.add(key)
+            self.logs.append(LogEntry("WARN", f"工作流插件未加载：{issue.get('folder') or issue.get('path')} · {issue.get('error')}"))
         # Keep the durable undo log beside the source, or beside the packaged
         # executable when running as a frozen distribution.
         self.history_path = APP_ROOT / "history" / "history.json"
@@ -134,8 +143,7 @@ class AppState:
 STATE = AppState()
 
 
-def _active_workflow() -> dict:
-    workflow = validate_workflow(STATE.workflow_catalog.get(STATE.workflow_id))
+def _apply_stored_tags(workflow: dict) -> dict:
     try:
         stored_tags = WORKFLOW_VALUE_STORE.read(workflow).get("tags", {})
     except (OSError, RuntimeError, ValueError):
@@ -158,29 +166,10 @@ def _active_workflow() -> dict:
     return workflow
 
 
-def _workflow_is_default() -> bool:
-    return _active_workflow().get("kind") == "default"
-
-
-def _workflow_state() -> dict:
-    workflow = _active_workflow()
-    return {
-        "active_id": STATE.workflow_id,
-        "active": workflow,
-        "available": [workflow_summary(item) for item in STATE.workflow_catalog.all()],
-        "values": dict(STATE.workflow_values),
-        "candidates": {field_id: list(values) for field_id, values in STATE.workflow_candidates.items()},
-    }
-
-
-def _activate_workflow(workflow_id: str, *, persist: bool = True) -> dict:
-    previous_workflow = _active_workflow()
-    if persist:
-        workflow = STATE.workflow_catalog.set_current(str(workflow_id))
-    else:
-        workflow = STATE.workflow_catalog.get(str(workflow_id))
-        STATE.workflow_catalog.current_workflow = str(workflow_id)
+def _apply_workflow_definition(workflow: dict, previous_workflow: dict) -> dict:
     STATE.workflow_id = workflow["id"]
+    STATE.workflow_catalog.current_workflow = workflow["id"]
+    STATE.workflow_snapshot = workflow
     allowed_modes = workflow.get("name_modes", ["original"])
     if STATE.mode not in allowed_modes:
         STATE.mode = allowed_modes[0]
@@ -214,14 +203,74 @@ def _activate_workflow(workflow_id: str, *, persist: bool = True) -> dict:
         apply_workflow_metadata(_all_records(), workflow)
         if STATE.scan_result:
             _apply_initial_extension_defaults(workflow, STATE.scan_result)
-    _initialise_workflow_values()
+    _initialise_workflow_values(workflow)
     if STATE.groups:
         for group in STATE.groups.values():
-            _prepare_group(group)
+            _prepare_group(group, workflow)
         _expand_associated_records([
             record for record in _all_records() if record.selected and not record.removed
         ])
     return workflow
+
+
+def _sync_workflow_catalog() -> dict[str, Any]:
+    refresh = STATE.workflow_catalog.refresh()
+    if not refresh["changed"]:
+        return refresh
+    diagnostics = STATE.workflow_catalog.diagnostics()
+    diagnostic_keys = {
+        (issue.get("path", ""), issue.get("error", "")) for issue in diagnostics
+    }
+    for issue in diagnostics:
+        key = (issue.get("path", ""), issue.get("error", ""))
+        if key not in STATE.workflow_diagnostic_keys:
+            STATE.log("WARN", f"工作流插件未加载：{issue.get('folder') or issue.get('path')} · {issue.get('error')}")
+    STATE.workflow_diagnostic_keys = diagnostic_keys
+    workflow = STATE.workflow_catalog.get(None)
+    previous_workflow = STATE.workflow_snapshot
+    active_changed = STATE.workflow_id != workflow["id"] or previous_workflow != workflow
+    if active_changed:
+        previous_id = STATE.workflow_id
+        _apply_workflow_definition(workflow, previous_workflow)
+        if previous_id != workflow["id"]:
+            STATE.log("WARN", f"当前工作流 {previous_id} 已不可用，已切换到 {workflow['name']}。")
+        else:
+            STATE.log("INFO", f"已重新加载工作流：{workflow['name']}。")
+    return refresh
+
+
+def _active_workflow() -> dict:
+    _sync_workflow_catalog()
+    workflow = validate_workflow(STATE.workflow_catalog.get(STATE.workflow_id))
+    return _apply_stored_tags(workflow)
+
+
+def _workflow_is_default() -> bool:
+    return _active_workflow().get("kind") == "default"
+
+
+def _workflow_state() -> dict:
+    workflow = _active_workflow()
+    return {
+        "active_id": STATE.workflow_id,
+        "active": workflow,
+        "available": [workflow_summary(item) for item in STATE.workflow_catalog.all()],
+        "values": dict(STATE.workflow_values),
+        "candidates": {field_id: list(values) for field_id, values in STATE.workflow_candidates.items()},
+        "revision": STATE.workflow_catalog.revision,
+        "load_errors": STATE.workflow_catalog.diagnostics(),
+    }
+
+
+def _activate_workflow(workflow_id: str, *, persist: bool = True) -> dict:
+    _sync_workflow_catalog()
+    previous_workflow = STATE.workflow_snapshot
+    if persist:
+        workflow = STATE.workflow_catalog.set_current(str(workflow_id))
+    else:
+        workflow = STATE.workflow_catalog.get(str(workflow_id))
+        STATE.workflow_catalog.current_workflow = str(workflow_id)
+    return _apply_workflow_definition(workflow, previous_workflow)
 
 
 def _excel_group_ready(key: str) -> bool:
@@ -994,9 +1043,9 @@ def _apply_workflow_rules(workflow: dict, record: FileRecord) -> None:
                 assigned.add(field_id)
 
 
-def _initialise_workflow_values() -> None:
+def _initialise_workflow_values(workflow: dict | None = None) -> None:
     """Initialise canonical values from declarative workflow field sources."""
-    workflow = _active_workflow()
+    workflow = workflow or _active_workflow()
     fields = workflow_field_map(workflow)
     current = STATE.current_group()
     current_record = current.records[0] if current and current.records else None
@@ -1346,10 +1395,10 @@ def _expand_workflow_excel_name(value: str, record: FileRecord,
     return expanded.strip(" _-.")
 
 
-def _prepare_group(group: NamingGroup) -> None:
-    workflow = _active_workflow()
+def _prepare_group(group: NamingGroup, workflow: dict | None = None) -> None:
+    workflow = workflow or _active_workflow()
     fields = workflow_field_map(workflow)
-    is_default = _workflow_is_default()
+    is_default = workflow.get("kind") == "default"
     numbering = workflow.get("numbering", {})
     numbering_mode = str(workflow.get("numbering_mode", "numeric" if is_default else "always"))
     profile_numbering_enabled = any(
@@ -1620,6 +1669,8 @@ class Handler(BaseHTTPRequestHandler):
                     "active": selected,
                     "available": [workflow_summary(item) for item in STATE.workflow_catalog.all()],
                     "values": {},
+                    "revision": STATE.workflow_catalog.revision,
+                    "load_errors": STATE.workflow_catalog.diagnostics(),
                 }
             _send_json(self, {"ok": True, "workflows": info["available"], "active": info["active"], "active_id": info["active_id"], "workflow": info})
         elif parsed.path == "/api/workflow-values":
@@ -1665,7 +1716,15 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if path == "/api/client-heartbeat":
                 self.server.client_heartbeat()
-                _send_json(self, {"ok": True})
+                with STATE.lock:
+                    _sync_workflow_catalog()
+                    workflow_revision = STATE.workflow_catalog.revision
+                    active_workflow_id = STATE.workflow_id
+                _send_json(self, {
+                    "ok": True,
+                    "workflow_revision": workflow_revision,
+                    "active_workflow_id": active_workflow_id,
+                })
             elif path == "/api/client-closed":
                 self.server.client_closed()
                 _send_json(self, {"ok": True})
@@ -1804,12 +1863,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def _save_workflow_payload(self, payload: dict) -> None:
         workflow = validate_workflow(payload, allow_builtin=False)
-        if workflow["id"] in BUILTIN_WORKFLOWS:
-            raise ValueError("内置工作流不可直接覆盖，请先导入为副本")
         with STATE.lock:
-            STATE.workflow_catalog.user_workflows[workflow["id"]] = workflow
-            STATE.workflow_catalog.current_workflow = workflow["id"]
-            STATE.workflow_catalog.save()
+            workflow = STATE.workflow_catalog.upsert_user_workflow(workflow)
             _activate_workflow(workflow["id"], persist=False)
             STATE.log("INFO", f"已保存工作流：{workflow['name']}。")
         _send_json(self, {"ok": True, "workflow": _workflow_state(), "state": _state_json()})

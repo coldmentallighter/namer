@@ -196,7 +196,9 @@ MIDI\\Pattern 01.mid     -> MIDI / MID
 
 ### 5.4 工作流
 
-“命名工作流”决定字段、字段作用范围、快捷标签、模板、编号规则、metadata provider、派生计算、判断规则和 action。当前提供五套内置工作流：
+“命名工作流”决定字段、字段作用范围、快捷标签、模板、编号规则、metadata provider、派生计算、判断规则和 action。程序动态监测 `workflows` 下所有包含 `workflow.json` 的子目录，因此新增工作流不需要修改代码或登记固定 ID。安装、修改或移除配置后，主界面和标签管理器会自动刷新；单个无效插件会被隔离并写入诊断，当前插件被移除时自动切换到仍可用的工作流，全部插件都不存在时进入基础模式。
+
+项目可按需安装以下工作流：
 
 - 默认工作流：保持原有的“元前缀 / 组前缀 / 子前缀 / 名称”字段和原文件名、数字编号、Excel 名称三种模式。
 - 采样包工作流：将 `author_code?`、`pack_code` 与只作元数据的作者/包全称分开；文件级字段区分交付类别、资源类型、子类型、限定词、语义名称、`asset_index`、`variant`、`key_or_chord` 和 BPM。每个资源 profile 决定实际段落顺序与固定前后 token，作者简写允许为空。内置 profile 覆盖 ColdLight 两段前缀、Shaw/Tyan 通用与 BASS 编号、Botanica 固定尾标，并保留可编辑的通用 profile。

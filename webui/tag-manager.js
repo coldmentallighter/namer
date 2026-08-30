@@ -21,8 +21,10 @@
     deletingTag: null,
     workbookName: "",
     workbookExists: false,
+    workflowRevision: 0,
   };
   let toastTimer;
+  let workflowRefreshPending = false;
 
   const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char]));
   const tagValue = (tag) => typeof tag === "string" ? tag : String(tag?.value ?? "");
@@ -30,14 +32,22 @@
   const query = new URLSearchParams(window.location.search);
 
   function startClientLifecycle() {
-    const heartbeat = () => {
-      fetch("/api/client-heartbeat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: "{}",
-        cache: "no-store",
-        keepalive: true,
-      }).catch(() => {});
+    const heartbeat = async () => {
+      try {
+        const response = await fetch("/api/client-heartbeat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+          cache: "no-store",
+          keepalive: true,
+        });
+        const payload = await response.json();
+        const nextRevision = Number(payload.workflow_revision || 0);
+        if (!nextRevision || nextRevision === state.workflowRevision) return;
+        const hadRevision = state.workflowRevision > 0;
+        if (!hadRevision) state.workflowRevision = nextRevision;
+        else refreshWorkflowCatalog().catch((error) => showToast(error.message, true));
+      } catch (_error) {}
     };
     heartbeat();
     window.setInterval(heartbeat, 2000);
@@ -410,12 +420,39 @@
     if (!response.ok || payload.ok === false) throw new Error(payload.error || "工作流加载失败");
     const workflow = payload.active;
     if (!workflow) throw new Error("工作流不存在");
+    state.workflows = payload.workflows || state.workflows;
+    state.workflowRevision = Number(payload.workflow?.revision || state.workflowRevision || 0);
     state.workflow = workflow;
     state.tags = await loadValues(workflow.id);
     state.candidates = await loadCandidates(workflow);
     state.fieldId = fieldById(query.get("field"))?.id || fields()[0]?.id || "";
     state.selectedTagId = "";
     render();
+  }
+
+  async function refreshWorkflowCatalog() {
+    if (workflowRefreshPending) return;
+    workflowRefreshPending = true;
+    try {
+      const response = await fetch("/api/workflows", { cache: "no-store" });
+      const payload = await response.json();
+      if (!response.ok || payload.ok === false) throw new Error(payload.error || "工作流加载失败");
+      const workflow = payload.active;
+      if (!workflow) throw new Error("没有可用的工作流");
+      state.workflows = payload.workflows || [];
+      state.workflowRevision = Number(payload.workflow?.revision || state.workflowRevision || 0);
+      state.workflow = workflow;
+      state.tags = await loadValues(workflow.id);
+      state.candidates = await loadCandidates(workflow);
+      state.fieldId = fieldById(state.fieldId)?.id || fields()[0]?.id || "";
+      state.selectedTagId = "";
+      closeModal();
+      closeDeleteModal();
+      render();
+      showToast("工作流列表已更新");
+    } finally {
+      workflowRefreshPending = false;
+    }
   }
 
   async function refreshValues() {
@@ -488,6 +525,7 @@
       const payload = await response.json();
       if (!response.ok || payload.ok === false) throw new Error(payload.error || "工作流加载失败");
       state.workflows = payload.workflows || [];
+      state.workflowRevision = Number(payload.workflow?.revision || 0);
       state.workflow = payload.active || state.workflows.find((workflow) => workflow.id === (payload.active_id || requested));
       if (!state.workflow) throw new Error("没有可用的工作流");
       state.tags = await loadValues(state.workflow.id);
