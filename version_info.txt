@@ -21,7 +21,7 @@ VSVersionInfo(
             StringStruct('InternalName', 'OfflineFileNamer'),
             StringStruct('OriginalFilename', 'OfflineFileNamer.exe'),
             StringStruct('ProductName', 'Offline File Namer'),
-            StringStruct('ProductVersion', '1.0'),
+            StringStruct('ProductVersion', '1.2'),
             StringStruct('Comments', 'Author: ColdLightVibe')
           ]
         )

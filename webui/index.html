@@ -127,8 +127,21 @@
           </div>
 
           <div class="table-shell">
-            <table class="file-table">
-              <thead><tr><th class="check-col"><input type="checkbox" id="selectAll"></th><th>当前文件名</th><th>文件夹 / 相对路径</th><th>扩展名</th><th>工作流字段</th><th>解析结果</th><th>新文件名预览</th><th>状态</th><th class="action-col">播放</th><th class="action-col">单项</th><th class="action-col">移除</th></tr></thead>
+            <table class="file-table" id="fileTable">
+              <colgroup>
+                <col data-column-id="selected" data-default-width="48">
+                <col data-column-id="current-name" data-default-width="170">
+                <col data-column-id="folder" data-default-width="150">
+                <col data-column-id="extension" data-default-width="72">
+                <col data-column-id="workflow" data-default-width="220">
+                <col data-column-id="parsed" data-default-width="170">
+                <col data-column-id="preview" data-default-width="200">
+                <col data-column-id="status" data-default-width="80">
+                <col data-column-id="play" data-default-width="52">
+                <col data-column-id="rename" data-default-width="58">
+                <col data-column-id="remove" data-default-width="58">
+              </colgroup>
+              <thead><tr><th class="check-col" data-column-id="selected"><span class="column-heading"><input type="checkbox" id="selectAll" aria-label="选择全部可见文件"></span></th><th data-column-id="current-name"><span class="column-heading">当前文件名</span></th><th data-column-id="folder"><span class="column-heading">文件夹 / 相对路径</span></th><th data-column-id="extension"><span class="column-heading">扩展名</span></th><th data-column-id="workflow"><span class="column-heading">工作流字段</span></th><th data-column-id="parsed"><span class="column-heading">解析结果</span></th><th data-column-id="preview"><span class="column-heading">新文件名预览</span></th><th data-column-id="status"><span class="column-heading">状态</span></th><th class="action-col" data-column-id="play"><span class="column-heading">播放</span></th><th class="action-col" data-column-id="rename"><span class="column-heading">单项</span></th><th class="action-col" data-column-id="remove"><span class="column-heading">移除</span></th></tr></thead>
               <tbody id="fileRows"><tr><td colspan="11" class="empty-row">选择根目录并扫描文件</td></tr></tbody>
             </table>
           </div>

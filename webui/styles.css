@@ -148,9 +148,15 @@ button { cursor: pointer; }
 .toolbar-spacer { flex: 1; }
 .selected-metric { color: var(--muted); font-size: 11px; }
 .table-shell { max-height: max(260px, calc(100vh - 680px)); min-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 7px; background: #fff; box-shadow: var(--shadow); }
-.file-table { width: 100%; min-width: 1260px; border-collapse: separate; border-spacing: 0; font-size: 11px; }
-.file-table th { position: sticky; top: 0; z-index: 2; background: #f1f6f3; color: #60706c; border-bottom: 1px solid var(--line); padding: 11px 9px; text-align: left; font-size: 10px; font-weight: 700; white-space: nowrap; }
-.file-table td { height: 50px; border-bottom: 1px solid #edf1ef; padding: 7px 9px; vertical-align: middle; color: #43524f; }
+.file-table { width: 100%; min-width: 1260px; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 11px; }
+.file-table th { position: sticky; top: 0; z-index: 2; box-sizing: border-box; background: #f1f6f3; color: #60706c; border-bottom: 1px solid var(--line); padding: 11px 9px; text-align: left; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.file-table td { box-sizing: border-box; height: 50px; overflow: hidden; border-bottom: 1px solid #edf1ef; padding: 7px 9px; vertical-align: middle; color: #43524f; }
+.column-heading { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.column-resizer { position: absolute; z-index: 3; top: 0; right: -4px; width: 9px; height: 100%; cursor: col-resize; touch-action: none; outline: none; }
+.column-resizer::after { content: ""; position: absolute; top: 7px; right: 4px; bottom: 7px; width: 1px; background: var(--line); transition: background .12s; }
+.column-resizer:hover::after, .column-resizer:focus-visible::after, .file-table th.is-resizing .column-resizer::after { background: var(--accent); }
+.file-table.is-resizing, .file-table.is-resizing * { cursor: col-resize !important; }
+.file-table .workflow-record-fields { min-width: 0; }
 .file-table tr:hover td { background: #fbfdfc; }
 .file-table tr.row-error td { background: var(--red-soft); }
 .file-table tr.row-warning td { background: var(--amber-soft); }

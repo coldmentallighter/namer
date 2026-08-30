@@ -4,6 +4,7 @@
   window.name = "main-app";
 
   const WORKFLOW_TAG_UPDATE_KEY = "offline-file-namer-workflow-tags-updated-v1";
+  const FILE_TABLE_COLUMN_STORAGE_KEY = "offline-file-namer-file-table-column-widths-v1";
 
   const $ = (id) => document.getElementById(id);
   const state = { data: null, selectedExtensions: {}, exportExtensions: {}, exportAvailableExtensions: {}, rootDirty: false, scopeDirty: false, taskDirty: false };
@@ -555,6 +556,7 @@
   function bindEvents() {
     setupLogResizer();
     setupSidebarResizer();
+    setupFileTableColumnResizers();
     applyTheme(localStorage.getItem("offline-file-namer-theme") || "light");
     $("themeToggle").addEventListener("click", () => {
       const theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
@@ -826,6 +828,137 @@
     handle.addEventListener("mousedown", beginResize);
     document.addEventListener("mousemove", moveResize);
     document.addEventListener("mouseup", stopResize);
+  }
+
+  function setupFileTableColumnResizers() {
+    const table = $("fileTable");
+    const headers = [...table.querySelectorAll("thead th[data-column-id]")];
+    const columns = new Map([...table.querySelectorAll("col[data-column-id]")].map((column) => [column.dataset.columnId, column]));
+    const widths = {};
+    const minimumWidth = 44;
+    let savedWidths = {};
+    try {
+      const saved = JSON.parse(localStorage.getItem(FILE_TABLE_COLUMN_STORAGE_KEY) || "{}");
+      if (saved && typeof saved === "object" && !Array.isArray(saved)) savedWidths = saved;
+    } catch (_error) {}
+
+    const clampWidth = (value) => Math.max(minimumWidth, Math.min(1200, Math.round(Number(value) || minimumWidth)));
+    const defaultWidths = Object.fromEntries(headers.map((header) => {
+      const column = columns.get(header.dataset.columnId);
+      return [header.dataset.columnId, clampWidth(column.dataset.defaultWidth)];
+    }));
+    const hasSavedWidths = headers.some((header) => {
+      const value = Number(savedWidths[header.dataset.columnId]);
+      return Number.isFinite(value) && value > 0;
+    });
+    if (!hasSavedWidths) {
+      const flexibleColumns = ["current-name", "folder", "workflow", "parsed", "preview"];
+      const defaultTotal = Object.values(defaultWidths).reduce((sum, width) => sum + width, 0);
+      const extraWidth = Math.max(0, Math.floor(table.parentElement.clientWidth - defaultTotal));
+      const extraPerColumn = Math.floor(extraWidth / flexibleColumns.length);
+      const remainder = extraWidth % flexibleColumns.length;
+      flexibleColumns.forEach((columnId, index) => {
+        defaultWidths[columnId] += extraPerColumn + (index < remainder ? 1 : 0);
+      });
+    }
+    const setTableWidth = () => {
+      const total = Object.values(widths).reduce((sum, width) => sum + width, 0);
+      table.style.width = `${total}px`;
+      table.style.minWidth = `${total}px`;
+    };
+    const setColumnWidth = (header, value) => {
+      const columnId = header.dataset.columnId;
+      const width = clampWidth(value);
+      widths[columnId] = width;
+      columns.get(columnId).style.width = `${width}px`;
+      const handle = header.querySelector(".column-resizer");
+      if (handle) {
+        handle.setAttribute("aria-valuenow", String(width));
+        handle.setAttribute("aria-valuetext", `${width} 像素`);
+      }
+      setTableWidth();
+    };
+    const persistWidths = () => localStorage.setItem(FILE_TABLE_COLUMN_STORAGE_KEY, JSON.stringify(widths));
+
+    headers.forEach((header) => {
+      const column = columns.get(header.dataset.columnId);
+      const defaultWidth = defaultWidths[header.dataset.columnId];
+      const savedWidth = Number(savedWidths[header.dataset.columnId]);
+      widths[header.dataset.columnId] = Number.isFinite(savedWidth) ? clampWidth(savedWidth) : defaultWidth;
+      column.style.width = `${widths[header.dataset.columnId]}px`;
+
+      const label = header.textContent.trim() || "选择";
+      const handle = document.createElement("span");
+      handle.className = "column-resizer";
+      handle.tabIndex = 0;
+      handle.setAttribute("role", "separator");
+      handle.setAttribute("aria-orientation", "vertical");
+      handle.setAttribute("aria-label", `调整${label}列宽`);
+      handle.setAttribute("aria-valuemin", String(minimumWidth));
+      handle.setAttribute("aria-valuemax", "1200");
+      handle.setAttribute("aria-valuenow", String(widths[header.dataset.columnId]));
+      handle.setAttribute("aria-valuetext", `${widths[header.dataset.columnId]} 像素`);
+      handle.title = `拖动调整${label}列宽；双击恢复默认宽度`;
+      header.appendChild(handle);
+
+      handle.addEventListener("keydown", (event) => {
+        if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+        event.preventDefault();
+        const step = event.shiftKey ? 25 : 10;
+        setColumnWidth(header, widths[header.dataset.columnId] + (event.key === "ArrowRight" ? step : -step));
+        persistWidths();
+      });
+      handle.addEventListener("dblclick", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        setColumnWidth(header, defaultWidth);
+        persistWidths();
+      });
+    });
+    setTableWidth();
+
+    let activeResize = null;
+    const beginResize = (event) => {
+      if (event.button !== undefined && event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const handle = event.currentTarget;
+      const header = handle.closest("th[data-column-id]");
+      activeResize = {
+        header,
+        startX: event.clientX,
+        startWidth: widths[header.dataset.columnId],
+      };
+      header.classList.add("is-resizing");
+      table.classList.add("is-resizing");
+      document.body.style.userSelect = "none";
+      if (event.pointerId !== undefined && handle.setPointerCapture) handle.setPointerCapture(event.pointerId);
+    };
+    const moveResize = (event) => {
+      if (!activeResize) return;
+      setColumnWidth(activeResize.header, activeResize.startWidth + event.clientX - activeResize.startX);
+    };
+    const stopResize = () => {
+      if (!activeResize) return;
+      activeResize.header.classList.remove("is-resizing");
+      table.classList.remove("is-resizing");
+      document.body.style.userSelect = "";
+      activeResize = null;
+      persistWidths();
+    };
+    headers.forEach((header) => {
+      const handle = header.querySelector(".column-resizer");
+      if (window.PointerEvent) handle.addEventListener("pointerdown", beginResize);
+      else handle.addEventListener("mousedown", beginResize);
+    });
+    if (window.PointerEvent) {
+      document.addEventListener("pointermove", moveResize);
+      document.addEventListener("pointerup", stopResize);
+      document.addEventListener("pointercancel", stopResize);
+    } else {
+      document.addEventListener("mousemove", moveResize);
+      document.addEventListener("mouseup", stopResize);
+    }
   }
 
   async function boot() {

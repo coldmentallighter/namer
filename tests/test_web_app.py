@@ -52,6 +52,16 @@ class WebApiTests(unittest.TestCase):
         self.assertIn('id="openTagManager"', html)
         self.assertIn('target="tag-manager"', html)
         self.assertNotIn('target="_blank"', html)
+        self.assertIn('id="fileTable"', html)
+        self.assertEqual(html.count('<col data-column-id='), 11)
+        with urlopen(self.url + "/assets/app.js") as response:
+            app_js = response.read().decode("utf-8")
+        self.assertIn("setupFileTableColumnResizers", app_js)
+        self.assertIn("offline-file-namer-file-table-column-widths-v1", app_js)
+        with urlopen(self.url + "/assets/styles.css") as response:
+            styles = response.read().decode("utf-8")
+        self.assertIn(".column-resizer", styles)
+        self.assertIn("table-layout: fixed", styles)
         with urlopen(self.url + "/tag-manager") as response:
             manager_html = response.read().decode("utf-8")
         self.assertIn("快捷标签管理", manager_html)

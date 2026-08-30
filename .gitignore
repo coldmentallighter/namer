@@ -10,3 +10,5 @@ config.json.tmp
 workflow-values/
 history/
 outputs/
+COPYRIGHT_REVIEW.md
+采样包工作流重构纲要.md
