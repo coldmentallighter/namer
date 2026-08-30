@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "id": "default",
+  "name": "默认工作流",
+  "version": "1.0.0",
+  "description": "保留当前软件的元前缀、组前缀、子前缀和名称流程。",
+  "builtin": true,
+  "kind": "default",
+  "separator": "_",
+  "name_modes": ["original", "numeric", "excel"],
+  "excel_field": "name",
+  "fields": [
+    {"id": "meta_prefix", "label": "元前缀", "scope": "group", "kind": "text", "initial_source": "directory.meta", "quick_tags": [{"label": "CL_", "value": "CL_"}, {"label": "BFNK_", "value": "BFNK_"}]},
+    {"id": "group_prefix", "label": "组前缀", "scope": "group", "kind": "text", "initial_source": "directory.group"},
+    {"id": "child_prefix", "label": "子前缀", "scope": "record", "kind": "text", "initial_source": "directory.child", "quick_tags": [{"label": "bright", "value": "bright"}, {"label": "soft", "value": "soft"}, {"label": "harsh", "value": "harsh"}, {"label": "dry", "value": "dry"}, {"label": "wet", "value": "wet"}]},
+    {"id": "name", "label": "名称", "scope": "record", "kind": "text", "initial_source": "stem"}
+  ],
+  "template": [{"field": "meta_prefix"}, {"field": "group_prefix"}, {"field": "child_prefix"}, {"field": "name"}],
+  "metadata_providers": [],
+  "actions": [],
+  "suffix_modes": {},
+  "suffix_options": [],
+  "numbering": {"enabled": true, "field": "name", "width": 2, "start": 1, "step": 1, "group_by": ["group_prefix", "child_prefix"], "manual": true, "skip_disk_existing": true}
+}

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="ColdLightVibe">
+  <meta name="version" content="1.0">
+  <title>快捷标签管理 · File Namer</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <link rel="stylesheet" href="/assets/tag-manager.css">
+</head>
+<body class="manager-page">
+  <div class="manager-shell">
+    <header class="manager-topbar">
+      <a class="manager-brand" href="/" target="main-app" title="返回命名工作台">
+        <span class="brand-icon"><img src="/assets/logo.png" alt=""></span>
+        <span><strong>File Namer</strong><small>快捷标签管理</small></span>
+      </a>
+      <div class="manager-top-actions">
+        <a class="button button-quiet" href="/" target="main-app"><span class="icon">←</span>返回命名工作台</a>
+        <button class="button button-quiet" id="themeToggle" title="切换深色模式"><span class="icon" id="themeIcon">☾</span><span id="themeLabel">深色</span></button>
+      </div>
+    </header>
+
+    <main class="manager-content">
+      <section class="manager-heading">
+        <div>
+          <span class="manager-eyebrow">WORKFLOW VOCABULARY</span>
+          <h1>快捷标签管理</h1>
+          <p>按文件名位置维护可复用标签；解析发现的新值也可以在这里确认。</p>
+        </div>
+        <div class="manager-context">
+          <label for="workflowSelect">当前工作流</label>
+          <select id="workflowSelect"></select>
+          <button class="button button-quiet" id="refreshValues" title="从 XLSX 重新加载标签"><span class="icon">↺</span>刷新 XLSX</button>
+        </div>
+      </section>
+
+      <section class="manager-metrics" aria-label="标签统计">
+        <div class="manager-metric"><span>当前位置</span><strong id="metricField">-</strong></div>
+        <div class="manager-metric"><span>标签总数</span><strong id="metricTags">0</strong></div>
+        <div class="manager-metric"><span>已启用</span><strong id="metricEnabled">0</strong></div>
+        <div class="manager-metric"><span>待确认候选</span><strong id="metricCandidates">0</strong></div>
+      </section>
+
+      <section class="manager-grid">
+        <aside class="manager-sidebar">
+          <div class="manager-panel-heading"><div><span class="panel-kicker">位置</span><h2>标签字段</h2></div><span class="count-pill" id="fieldCount">0</span></div>
+          <p class="manager-sidebar-note">工作表按字段位置区分。选择一个位置后，可以维护它的快捷值和别名。</p>
+          <nav id="fieldList" class="field-list"></nav>
+          <div class="manager-sidebar-divider"></div>
+          <div class="manager-sidebar-foot">
+            <span class="panel-kicker">工作流说明</span>
+            <p id="workflowDescription">正在加载工作流...</p>
+          </div>
+        </aside>
+
+        <section class="manager-main-panel">
+          <div class="manager-main-heading">
+            <div><span class="panel-kicker">当前工作表</span><h2 id="fieldTitle">-</h2><p id="fieldMeta">-</p></div>
+            <button class="button button-primary" id="addTagButton"><span class="icon">＋</span>新增标签</button>
+          </div>
+          <div class="manager-toolbar">
+            <label class="manager-search"><span>⌕</span><input id="tagSearch" type="search" placeholder="搜索标签、实际值或别名"></label>
+            <select id="tagStatus"><option value="all">全部状态</option><option value="enabled">已启用</option><option value="disabled">已停用</option></select>
+            <span class="toolbar-spacer"></span><span class="manager-save-note" id="saveNote">标签保存到工作流 XLSX</span>
+          </div>
+          <div class="manager-table-wrap">
+            <table class="manager-table">
+              <thead><tr><th class="manager-index-col">#</th><th>快捷标签</th><th>实际输出</th><th>别名</th><th>状态</th><th>使用</th><th>来源</th><th class="manager-action-col">操作</th></tr></thead>
+              <tbody id="tagRows"></tbody>
+            </table>
+          </div>
+
+          <section class="candidate-section">
+            <div class="candidate-heading"><div><span class="panel-kicker">解析收件箱</span><h2>待确认候选</h2></div><span class="candidate-caption">未知内容先放在这里，确认后写入当前位置的 XLSX</span></div>
+            <div id="candidateList" class="candidate-list"></div>
+          </section>
+        </section>
+
+        <aside class="manager-inspector">
+          <div class="manager-panel-heading"><div><span class="panel-kicker">详情</span><h2>标签预览</h2></div><span class="inspector-mark">◈</span></div>
+          <div id="tagInspector" class="tag-inspector-empty">选择一个标签查看详情</div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div class="manager-modal-backdrop hidden" id="tagModal">
+    <form class="manager-modal" id="tagForm">
+      <div class="modal-heading"><div><span class="panel-kicker">快捷标签</span><h2 id="modalTitle">新增标签</h2></div><button class="modal-close" id="closeModal" type="button" title="关闭">×</button></div>
+      <div class="modal-grid">
+        <label class="manager-field"><span>标签位置</span><select id="tagField"></select></label>
+        <label class="manager-field"><span>显示名称</span><input id="tagLabel" type="text" required placeholder="例如 Cymatics"></label>
+        <label class="manager-field"><span>实际值</span><input id="tagValue" type="text" required placeholder="写入文件名的内容"></label>
+        <label class="manager-field manager-field-wide"><span>解析别名</span><input id="tagAliases" type="text" placeholder="用逗号分隔，例如 Cymatics_、Cym"></label>
+      </div>
+      <div class="modal-options">
+        <label class="modal-check"><input id="tagEnabled" type="checkbox" checked><span>加入快捷标签选择</span></label>
+      </div>
+      <p class="modal-hint" id="modalHint">实际值和显示名称可以不同；分隔符由工作流统一处理。</p>
+      <div class="modal-actions"><button class="button button-quiet" id="cancelModal" type="button">取消</button><button class="button button-primary" type="submit">保存标签</button></div>
+    </form>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/assets/tag-manager.js"></script>
+</body>
+</html>

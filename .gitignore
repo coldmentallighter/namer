@@ -5,3 +5,8 @@ __pycache__/
 build/
 dist/
 *.spec
+config.json
+config.json.tmp
+workflow-values/
+history/
+outputs/

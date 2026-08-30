@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "id": "data-table",
+  "name": "数据表工作流",
+  "version": "1.0.0",
+  "description": "面向数据表、数据集和交付文件的分层命名流程。分区和批次可同时使用。",
+  "builtin": true,
+  "kind": "data-table",
+  "separator": "_",
+  "name_modes": ["original"],
+  "fields": [
+    {"id": "meta_prefix", "label": "来源/所有者", "scope": "group", "kind": "text", "required": true, "initial_source": "directory.meta"},
+    {"id": "dataset_name", "label": "项目/数据集名", "scope": "group", "kind": "text", "required": true},
+    {"id": "data_domain", "label": "数据域", "scope": "group", "kind": "text", "quick_tags": [{"label": "业务", "value": "业务"}, {"label": "运营", "value": "运营"}, {"label": "财务", "value": "财务"}]},
+    {"id": "table_topic", "label": "表主题", "scope": "group", "kind": "text", "initial_source": "directory.child"},
+    {"id": "data_level", "label": "数据层级", "scope": "record", "kind": "text", "quick_tags": [{"label": "raw", "value": "raw"}, {"label": "staging", "value": "staging"}, {"label": "detail", "value": "detail"}, {"label": "summary", "value": "summary"}]},
+    {"id": "purpose", "label": "用途", "scope": "record", "kind": "text", "quick_tags": [{"label": "analysis", "value": "analysis"}, {"label": "training", "value": "training"}, {"label": "serving", "value": "serving"}, {"label": "archive", "value": "archive"}]},
+    {"id": "grain", "label": "粒度", "scope": "record", "kind": "text"},
+    {"id": "partition", "label": "分区", "scope": "record", "kind": "text", "quick_tags": [{"label": "date", "value": "date"}, {"label": "month", "value": "month"}]},
+    {"id": "batch", "label": "批次", "scope": "record", "kind": "number"},
+    {"id": "version", "label": "版本", "scope": "record", "kind": "text", "default": "v01"},
+    {"id": "status", "label": "状态", "scope": "record", "kind": "text", "default": "Draft", "quick_tags": [{"label": "Draft", "value": "Draft"}, {"label": "Review", "value": "Review"}, {"label": "Final", "value": "Final"}, {"label": "Archived", "value": "Archived"}]}
+  ],
+  "template": [{"field": "meta_prefix"}, {"field": "dataset_name"}, {"field": "data_domain"}, {"field": "table_topic"}, {"field": "data_level"}, {"field": "purpose"}, {"field": "grain"}, {"field": "partition"}, {"field": "batch"}, {"field": "version"}, {"field": "status"}],
+  "suffix_modes": {},
+  "suffix_options": [{"field": "partition", "label": "分区", "optional": true}, {"field": "batch", "label": "批次", "optional": true}, {"field": "version", "label": "版本", "optional": true}, {"field": "status", "label": "状态", "optional": true}],
+  "numbering": {"enabled": false, "field": "batch", "width": 2, "start": 1, "step": 1, "group_by": ["data_domain", "table_topic"], "manual": true, "skip_disk_existing": true}
+}

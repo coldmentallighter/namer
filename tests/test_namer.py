@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import struct
 import tempfile
 import unittest
 import wave
@@ -12,19 +13,16 @@ from openpyxl import Workbook, load_workbook
 from namer_core import (
     NamingGroup,
     assign_numeric,
-    audio_content_type,
     build_stem_associations,
     collect_directory_statistics,
     compose_filename,
-    detect_bpm,
     directory_prefix_defaults,
     execute_rename,
     export_filename_tables,
     file_fingerprint,
     import_xlsx,
-    is_audio_extension,
+    read_file_metadata,
     natural_key,
-    append_bpm_suffix,
     parse_filename,
     preflight,
     redo_last,
@@ -32,6 +30,10 @@ from namer_core import (
     undo_last,
     validate_filename,
 )
+from workflow_modules.image_assets import read_image_dimensions
+from workflow_modules.sample_pack import append_bpm_suffix, detect_bpm
+from workflow_metadata import parse_workflow_filename, read_workflow_metadata
+from workflow_config import BUILTIN_WORKFLOWS, SAMPLE_PACK_WORKFLOW
 
 
 class NamerCoreTests(unittest.TestCase):
@@ -52,6 +54,29 @@ class NamerCoreTests(unittest.TestCase):
 
     def tearDown(self):
         self.tmp.cleanup()
+
+    @staticmethod
+    def _write_bpm_wav(path: Path, bpm: int) -> None:
+        value = f"{bpm}\0".encode("ascii")
+        value += b"\0" * (len(value) & 1)
+        info = b"INFO" + b"TBPM" + struct.pack("<I", len(value)) + value
+        fmt = struct.pack("<HHIIHH", 1, 1, 8_000, 16_000, 2, 16)
+        body = (
+            b"WAVE"
+            + b"fmt " + struct.pack("<I", len(fmt)) + fmt
+            + b"LIST" + struct.pack("<I", len(info)) + info
+            + b"data" + struct.pack("<I", 0)
+        )
+        path.write_bytes(b"RIFF" + struct.pack("<I", len(body)) + body)
+
+    @staticmethod
+    def _write_bpm_midi(path: Path, bpm: int) -> None:
+        microseconds = round(60_000_000 / bpm)
+        track = b"\x00\xff\x51\x03" + microseconds.to_bytes(3, "big") + b"\x00\xff\x2f\x00"
+        path.write_bytes(
+            b"MThd" + struct.pack(">IHHH", 6, 0, 1, 480)
+            + b"MTrk" + struct.pack(">I", len(track)) + track
+        )
 
     def test_scan_dynamic_extensions_groups_and_hidden(self):
         result = scan_folder(self.root)
@@ -75,11 +100,39 @@ class NamerCoreTests(unittest.TestCase):
         self.assertIn("保留设备名", validate_filename("CON.txt.wav"))
         self.assertIsNone(validate_filename("中文 #&-_ sample.wav"))
 
-    def test_supported_audio_preview_extensions(self):
-        for extension in (".wav", ".wv", ".mp3", ".aif", ".flac", ".aac", ".ogg", ".m4a"):
-            self.assertTrue(is_audio_extension(extension.upper()))
-            self.assertTrue(audio_content_type(extension).startswith("audio/"))
-        self.assertFalse(is_audio_extension(".png"))
+    def test_common_metadata_does_not_classify_format_specific_namespaces(self):
+        metadata = read_file_metadata(self.root / "Drums&Loop" / "Kick 2.wav", self.root)
+        self.assertTrue(metadata["file"]["mime_type"].startswith("audio/"))
+        self.assertNotIn("image", metadata)
+        signature_image = self.root / "Drums&Loop" / "signature.dat"
+        signature_image.write_bytes(
+            b"\x89PNG\r\n\x1a\n" + (13).to_bytes(4, "big") + b"IHDR"
+            + (640).to_bytes(4, "big") + (480).to_bytes(4, "big")
+            + b"\x08\x02\x00\x00\x00"
+        )
+        self.assertNotIn("image", read_workflow_metadata(
+            BUILTIN_WORKFLOWS["default"], signature_image, self.root
+        ))
+        self.assertNotIn("sample_pack", read_workflow_metadata(
+            BUILTIN_WORKFLOWS["sample-pack"], signature_image, self.root
+        ))
+        image_metadata = read_workflow_metadata(
+            BUILTIN_WORKFLOWS["image-assets"], signature_image, self.root
+        )
+        self.assertEqual(image_metadata["image"]["aspect_ratio"], "4:3")
+        unknown_sample = self.root / "Drums&Loop" / "Loop_128.bin"
+        unknown_sample.write_bytes(b"not a format-specific header")
+        sample_metadata = read_workflow_metadata(
+            BUILTIN_WORKFLOWS["sample-pack"], unknown_sample, self.root
+        )
+        self.assertEqual(sample_metadata["sample_pack"]["bpm"], "128")
+        self.assertNotIn("sample_pack", read_workflow_metadata(
+            BUILTIN_WORKFLOWS["default"], unknown_sample, self.root
+        ))
+        image_metadata = read_workflow_metadata(
+            BUILTIN_WORKFLOWS["image-assets"], self.root / "Drums&Loop" / "中文 #&-_.png", self.root
+        )
+        self.assertNotIn("image", image_metadata)
 
     def test_numeric_is_independent_per_group(self):
         result = scan_folder(self.root)
@@ -114,28 +167,91 @@ class NamerCoreTests(unittest.TestCase):
         self.assertEqual(wav_group.records[0].associated_extensions, [".mid", ".wav"])
 
     def test_filename_parse_template_and_auto_preview(self):
-        parsed = parse_filename("Loop_Drum_03_150BPM", "{type}_{name}_{number}_{bpm}")
+        parsed = parse_filename("Loop_Drum_03", "{type}_{name}_{number}")
         self.assertTrue(parsed["matched"])
         self.assertEqual(parsed["fields"]["number"], "03")
-        self.assertEqual(parsed["fields"]["bpm"], "150")
-        auto = parse_filename("Kick_Loop_150BPM_Am_03")
+        sample_parsed = parse_workflow_filename(
+            SAMPLE_PACK_WORKFLOW, "Loop_Drum_03_150BPM", "{type}_{name}_{number}_{bpm}"
+        )
+        self.assertTrue(sample_parsed["matched"])
+        self.assertEqual(sample_parsed["fields"]["bpm"], "150")
+        auto = parse_workflow_filename(SAMPLE_PACK_WORKFLOW, "Kick_Loop_150BPM_Am_03")
         self.assertEqual(auto["fields"].get("bpm"), "150")
-        self.assertEqual(auto["fields"].get("number"), "03")
+        self.assertEqual(auto["fields"].get("variant"), "03")
+
+    def test_image_dimensions_and_normalized_metadata(self):
+        image = self.root / "Drums&Loop" / "wide.png"
+        image.write_bytes(
+            b"\x89PNG\r\n\x1a\n" + (13).to_bytes(4, "big") + b"IHDR"
+            + (1920).to_bytes(4, "big") + (1080).to_bytes(4, "big")
+            + b"\x08\x02\x00\x00\x00"
+        )
+        self.assertEqual(read_image_dimensions(image), (1920, 1080))
+        metadata = read_workflow_metadata(BUILTIN_WORKFLOWS["image-assets"], image, self.root)
+        self.assertEqual(metadata["file"]["extension"], "png")
+        self.assertEqual(metadata["image"]["orientation"], "landscape")
+        self.assertEqual(metadata["image"]["aspect_ratio"], "16:9")
+        self.assertEqual(metadata["image"]["aspect_ratio_token"], "16x9")
+
+        portrait = self.root / "Drums&Loop" / "portrait.png"
+        portrait.write_bytes(
+            b"\x89PNG\r\n\x1a\n" + (13).to_bytes(4, "big") + b"IHDR"
+            + (1080).to_bytes(4, "big") + (1920).to_bytes(4, "big")
+            + b"\x08\x02\x00\x00\x00"
+        )
+        scanned = scan_folder(
+            self.root,
+            metadata_reader=lambda path, root: read_workflow_metadata(BUILTIN_WORKFLOWS["image-assets"], path, root),
+        )
+        record = next(item for item in scanned.records if item.path == str(portrait))
+        self.assertEqual(record.metadata["image"]["orientation"], "portrait")
+
+    def test_complex_image_ratios_snap_to_common_screen_ratios(self):
+        cases = {
+            "ultrawide.png": (7672, 3264, "21x9", "959x408"),
+            "photo.png": (5882, 3892, "3x2", "2941x1946"),
+            "dual-monitor.png": (4308, 2137, "2x1", "4308x2137"),
+            "portrait.png": (1299, 1813, "3x4", "1299x1813"),
+        }
+        for filename, (width, height, expected_token, expected_exact) in cases.items():
+            image = self.root / "Drums&Loop" / filename
+            image.write_bytes(
+                b"\x89PNG\r\n\x1a\n" + (13).to_bytes(4, "big") + b"IHDR"
+                + width.to_bytes(4, "big") + height.to_bytes(4, "big")
+                + b"\x08\x02\x00\x00\x00"
+            )
+            metadata = read_workflow_metadata(BUILTIN_WORKFLOWS["image-assets"], image, self.root)["image"]
+            self.assertEqual(metadata["aspect_ratio_token"], expected_token, filename)
+            self.assertEqual(metadata["aspect_ratio_exact"], expected_exact, filename)
 
     def test_bpm_detection_and_idempotent_suffix(self):
         bpm, source = detect_bpm(self.root / "not-created.wav", "Synth Arp (90, Dm)")
         self.assertEqual((bpm, source), ("90", "name"))
         bpm, source = detect_bpm(self.root / "not-created.mid", "Loop_150")
         self.assertEqual((bpm, source), ("150", "name"))
-        fixtures = Path(__file__).resolve().parents[1] / "test_source" / "source"
-        bpm, source = detect_bpm(fixtures / "CL_IE_Drums_Full_Loop_2_150.wav")
+        wav_fixture = self.root / "metadata-tempo.wav"
+        midi_135_fixture = self.root / "metadata-tempo-135.mid"
+        midi_140_fixture = self.root / "metadata-tempo-140.mid"
+        self._write_bpm_wav(wav_fixture, 150)
+        self._write_bpm_midi(midi_135_fixture, 135)
+        self._write_bpm_midi(midi_140_fixture, 140)
+        bpm, source = detect_bpm(wav_fixture)
         self.assertEqual((bpm, source), ("150", "metadata"))
-        bpm, source = detect_bpm(fixtures / "W2_Midi_Chords_Vibe_F#_Min_135.mid")
+        bpm, source = detect_bpm(midi_135_fixture)
         self.assertEqual((bpm, source), ("135", "metadata"))
-        bpm, source = detect_bpm(fixtures / "kokoro.mid")
+        bpm, source = detect_bpm(midi_140_fixture)
         self.assertEqual((bpm, source), ("140", "metadata"))
         self.assertEqual(append_bpm_suffix("Loop", "150"), "Loop_150BPM")
         self.assertEqual(append_bpm_suffix("Loop_150BPM", "150"), "Loop_150BPM")
+
+    def test_repository_test_resources_are_empty_placeholders(self):
+        fixture_root = Path(__file__).resolve().parents[1] / "test-source"
+        nonempty = [
+            str(path.relative_to(fixture_root))
+            for path in fixture_root.rglob("*")
+            if path.is_file() and path.stat().st_size
+        ]
+        self.assertEqual(nonempty, [])
 
     def test_export_and_sheet_specific_import(self):
         (self.root / "Drums&Loop" / "Tempo_128BPM.wav").write_bytes(b"RIFF")
@@ -148,11 +264,9 @@ class NamerCoreTests(unittest.TestCase):
         try:
             rows = list(workbook["WAV"].iter_rows(values_only=True))
             self.assertEqual(rows[0][0], "SourceName")
-            self.assertIn("BPM", rows[0])
-            self.assertIn("Scale", rows[0])
+            self.assertIn("Metadata.file.name", rows[0])
+            self.assertNotIn("BPM", rows[0])
             tempo_row = next(row for row in rows[1:] if row[0] == "Tempo_128BPM")
-            self.assertEqual(tempo_row[rows[0].index("BPM")], "128")
-            self.assertIn(tempo_row[rows[0].index("Scale")], (None, ""))
         finally:
             workbook.close()
         # A detailed sheet can be selected by extension instead of relying on
@@ -179,7 +293,7 @@ class NamerCoreTests(unittest.TestCase):
         self.assertEqual(match.matched_count, 1)
         self.assertEqual(match.mapping[next(record.path for record in group.records if record.stem == "Loop_150BPM")], "Pad_F#min_150")
         record = next(record for record in group.records if record.stem == "Loop_150BPM")
-        self.assertEqual(record.scale, "F#min")
+        self.assertNotIn("scale", record.workflow_values)
 
         self._make_workbook(xlsx, [
             ("SourceName", "NewName", "BPM", "Scale"),
@@ -497,28 +611,21 @@ class NamerCoreTests(unittest.TestCase):
         outputs2 = export_filename_tables(self.root, [".wav", ".png"])
         self.assertTrue(any(path.name == "Drums&Loop.ori02.ffnf.xlsx" for path in outputs2))
 
-    def test_export_deep_tree_writes_structure_once_without_overwrite(self):
+    def test_export_deep_tree_writes_filetree_once_without_overwrite(self):
         nested = self.root / "Level 1" / "Level 2" / "Level 3"
         nested.mkdir(parents=True)
         (nested / "Deep 2.wav").write_bytes(b"RIFF")
         (self.root / "Level 1" / "Level 2" / "Empty Level 3").mkdir()
         outputs = export_filename_tables(self.root, [".wav"])
-        structure = self.root / "Structure.ffnf.txt"
         filetree = self.root / "filetree.txt"
-        self.assertIn(structure, outputs)
         self.assertIn(filetree, outputs)
-        structure_text = structure.read_text(encoding="utf-8")
         filetree_text = filetree.read_text(encoding="utf-8").replace("\\", "/")
-        self.assertIn("Level 1", structure_text)
-        self.assertIn("Level 3", structure_text)
         self.assertIn("Level 1/Level 2/Level 3", filetree_text)
         self.assertIn("Level 1/Level 2/Level 3.ffnf.xlsx", filetree_text)
         self.assertNotIn("Empty Level 3", filetree_text)
         self.assertNotIn("Deep 2.wav", filetree_text)
-        self.assertNotEqual(filetree_text, structure_text.replace("\\", "/"))
         original = filetree_text
         outputs_again = export_filename_tables(self.root, [".wav"])
-        self.assertNotIn(structure, outputs_again)
         self.assertNotIn(filetree, outputs_again)
         self.assertEqual(filetree.read_text(encoding="utf-8").replace("\\", "/"), original)
         self.assertNotIn(".txt", scan_folder(self.root).extension_counts)

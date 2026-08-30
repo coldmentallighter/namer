@@ -9,16 +9,15 @@ from __future__ import annotations
 import ctypes
 import hashlib
 import json
+import mimetypes
 import os
 import re
-import struct
 import subprocess
-import wave
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Iterable, Sequence
+from typing import Any, Callable, Iterable, Sequence
 
 try:
     from openpyxl import Workbook, load_workbook
@@ -27,9 +26,6 @@ except ImportError:  # pragma: no cover - UI reports this clearly
     load_workbook = None
 
 
-DEFAULT_EXTENSIONS = {".wav", ".mid", ".fxb", ".fst", ".png"}
-AUDIO_EXTENSIONS = {".wav", ".wv", ".mp3", ".aif", ".aiff", ".flac", ".aac", ".ogg", ".m4a"}
-BPM_EXTENSIONS = AUDIO_EXTENSIONS | {".mid", ".midi"}
 ILLEGAL_CHARS = set('\\/:*?"<>|')
 RESERVED_NAMES = {
     "CON", "PRN", "AUX", "NUL",
@@ -51,264 +47,33 @@ def normalise_ext(value: str) -> str:
     return value if value.startswith(".") else f".{value}"
 
 
-def is_audio_extension(value: str) -> bool:
-    return normalise_ext(value).casefold() in AUDIO_EXTENSIONS
+def read_file_metadata(path: str | Path, root: str | Path | None = None) -> dict[str, Any]:
+    """Return metadata that is meaningful for every file type.
 
-
-def audio_content_type(value: str) -> str:
-    return {
-        ".wav": "audio/wav",
-        ".wv": "audio/wavpack",
-        ".mp3": "audio/mpeg",
-        ".aif": "audio/aiff",
-        ".aiff": "audio/aiff",
-        ".flac": "audio/flac",
-        ".aac": "audio/aac",
-        ".ogg": "audio/ogg",
-        ".m4a": "audio/mp4",
-    }.get(normalise_ext(value).casefold(), "application/octet-stream")
-
-
-def is_bpm_extension(value: str) -> bool:
-    """Return whether a file can expose a tempo for naming purposes."""
-    return normalise_ext(value).casefold() in BPM_EXTENSIONS
-
-
-def _format_bpm(value: float | int | str) -> str:
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return ""
-    if not 20 <= number <= 400:
-        return ""
-    rounded = round(number)
-    if abs(number - rounded) < 0.1:
-        return str(rounded)
-    return f"{number:.2f}".rstrip("0").rstrip(".")
-
-
-def _valid_bpm(value: float | int | str) -> str:
-    return _format_bpm(value)
-
-
-def _bpm_from_name(stem: str) -> str:
-    """Extract conservative BPM tokens from a sample/MIDI filename.
-
-    Explicit ``BPM`` tokens are preferred.  Parenthesised values such as
-    ``(90, Dm)`` and a final 40-400 integer cover common sample-pack names
-    without treating short variation numbers (02, 03, 06) as tempo.
+    Format-specific namespaces are deliberately supplied by workflow providers
+    through ``scan_folder(..., metadata_reader=...)``.
     """
-    source = str(stem or "")
-    match = re.search(r"(?<!\d)(\d{2,3}(?:\.\d+)?)\s*BPM(?![A-Za-z])", source, re.IGNORECASE)
-    if match:
-        return _valid_bpm(match.group(1))
-    match = re.search(r"\(\s*(\d{2,3}(?:\.\d+)?)\s*(?:,|BPM\b|\))", source, re.IGNORECASE)
-    if match:
-        return _valid_bpm(match.group(1))
-    match = re.search(r"(?:^|[_\-\s])(\d{2,3})$", source)
-    if match:
-        return _valid_bpm(match.group(1))
-    return ""
-
-
-def _read_riff_bpm(path: Path) -> str:
-    try:
-        with path.open("rb") as stream:
-            header = stream.read(12)
-            if len(header) < 12 or header[:4] not in {b"RIFF", b"RF64"} or header[8:12] != b"WAVE":
-                return ""
-            while True:
-                chunk_header = stream.read(8)
-                if len(chunk_header) < 8:
-                    break
-                chunk_id, size = chunk_header[:4], struct.unpack("<I", chunk_header[4:])[0]
-                if chunk_id == b"acid" and size >= 24:
-                    data = stream.read(24)
-                    if len(data) >= 24:
-                        # ACIDized WAV stores the tempo as the final float.
-                        bpm = _valid_bpm(struct.unpack_from("<f", data, 20)[0])
-                        if bpm:
-                            return bpm
-                    stream.seek(max(0, size - 24), 1)
-                elif chunk_id == b"LIST" and size <= 1024 * 1024:
-                    data = stream.read(size)
-                    if data[:4] == b"INFO":
-                        offset = 4
-                        while offset + 8 <= len(data):
-                            key = data[offset:offset + 4].decode("ascii", "ignore").casefold()
-                            length = struct.unpack_from("<I", data, offset + 4)[0]
-                            value = data[offset + 8:offset + 8 + length].split(b"\0", 1)[0].decode("utf-8", "ignore").strip()
-                            if key in {"bpm ", "tbpm", "ibpm", "temp", "tempo"}:
-                                bpm = _valid_bpm(value)
-                                if bpm:
-                                    return bpm
-                            offset += 8 + length + (length & 1)
-                else:
-                    stream.seek(size, 1)
-                if size & 1:
-                    stream.seek(1, 1)
-    except (OSError, struct.error, ValueError):
-        return ""
-    return ""
-
-
-def _read_flac_bpm(path: Path) -> str:
-    try:
-        with path.open("rb") as stream:
-            if stream.read(4) != b"fLaC":
-                return ""
-            while True:
-                block_header = stream.read(4)
-                if len(block_header) < 4:
-                    break
-                last = bool(block_header[0] & 0x80)
-                block_type = block_header[0] & 0x7F
-                size = int.from_bytes(block_header[1:4], "big")
-                data = stream.read(size)
-                if block_type == 4 and len(data) >= 8:
-                    vendor_size = struct.unpack_from("<I", data, 0)[0]
-                    offset = 4 + vendor_size
-                    if offset + 4 <= len(data):
-                        count = struct.unpack_from("<I", data, offset)[0]
-                        offset += 4
-                        for _ in range(count):
-                            if offset + 4 > len(data):
-                                break
-                            length = struct.unpack_from("<I", data, offset)[0]
-                            offset += 4
-                            comment = data[offset:offset + length].decode("utf-8", "ignore")
-                            offset += length
-                            key, _, value = comment.partition("=")
-                            if key.casefold() in {"bpm", "tempo", "tbpm"}:
-                                bpm = _valid_bpm(value)
-                                if bpm:
-                                    return bpm
-                if last:
-                    break
-    except (OSError, struct.error, ValueError):
-        return ""
-    return ""
-
-
-def _read_vlq(data: bytes, offset: int) -> tuple[int, int]:
-    value = 0
-    while offset < len(data):
-        byte = data[offset]
-        offset += 1
-        value = (value << 7) | (byte & 0x7F)
-        if not byte & 0x80:
-            return value, offset
-    return value, offset
-
-
-def _read_midi_bpm(path: Path) -> str:
-    try:
-        data = path.read_bytes()
-        if data[:4] != b"MThd" or len(data) < 14:
-            return ""
-        header_size = struct.unpack_from(">I", data, 4)[0]
-        offset = 8 + header_size
-        track_count = struct.unpack_from(">H", data, 10)[0]
-        tempo_events: list[tuple[int, int]] = []
-        max_tick = 0
-        for _ in range(track_count):
-            if offset + 8 > len(data) or data[offset:offset + 4] != b"MTrk":
-                break
-            length = struct.unpack_from(">I", data, offset + 4)[0]
-            end = min(len(data), offset + 8 + length)
-            cursor = offset + 8
-            running_status: int | None = None
-            tick = 0
-            while cursor < end:
-                delta, cursor = _read_vlq(data, cursor)
-                tick += delta
-                max_tick = max(max_tick, tick)
-                if cursor >= end:
-                    break
-                status = data[cursor]
-                if status < 0x80:
-                    if running_status is None:
-                        break
-                    status = running_status
-                else:
-                    cursor += 1
-                if status == 0xFF:
-                    if cursor >= end:
-                        break
-                    meta_type = data[cursor]
-                    cursor += 1
-                    size, cursor = _read_vlq(data, cursor)
-                    payload = data[cursor:cursor + size]
-                    cursor += size
-                    if meta_type == 0x51 and len(payload) == 3:
-                        microseconds = int.from_bytes(payload, "big")
-                        if microseconds:
-                            tempo_events.append((tick, microseconds))
-                    if meta_type == 0x2F:
-                        break
-                elif status in (0xF0, 0xF7):
-                    size, cursor = _read_vlq(data, cursor)
-                    cursor += size
-                else:
-                    event_type = status & 0xF0
-                    data_size = 1 if event_type in (0xC0, 0xD0) else 2
-                    cursor += data_size
-                if status < 0xF0:
-                    running_status = status
-            offset = end
-        if tempo_events:
-            # Resolve duplicate events at one tick in file order, then choose
-            # the tempo that governs the longest part of the MIDI sequence.
-            by_tick: dict[int, int] = {}
-            for tick, microseconds in tempo_events:
-                by_tick[tick] = microseconds
-            ordered = sorted(by_tick.items())
-            if len(ordered) == 1 or max_tick <= ordered[0][0]:
-                return _format_bpm(60_000_000 / ordered[0][1])
-            dominant = max(
-                enumerate(ordered),
-                key=lambda item: (
-                    (ordered[item[0] + 1][0] if item[0] + 1 < len(ordered) else max_tick) - item[1][0],
-                    -item[0],
-                ),
-            )[1][1]
-            return _format_bpm(60_000_000 / dominant)
-    except (OSError, struct.error, ValueError):
-        return ""
-    return ""
-
-
-def detect_bpm(path: str | Path, stem: str | None = None) -> tuple[str, str]:
-    """Return ``(bpm, source)`` with embedded metadata taking precedence."""
-    source_path = Path(path)
-    extension = source_path.suffix.casefold()
-    bpm = ""
-    if extension in {".wav", ".wave"}:
-        bpm = _read_riff_bpm(source_path)
-    elif extension == ".flac":
-        bpm = _read_flac_bpm(source_path)
-    elif extension in {".mid", ".midi"}:
-        bpm = _read_midi_bpm(source_path)
-    if bpm:
-        return bpm, "metadata"
-    bpm = _bpm_from_name(stem if stem is not None else source_path.stem)
-    return (bpm, "name") if bpm else ("", "")
-
-
-def append_bpm_suffix(name: str, bpm: str, separator: str = "_") -> str:
-    """Append an idempotent ``<separator><bpm>BPM`` suffix."""
-    base = str(name or "")
-    value = _format_bpm(bpm)
-    if not value:
-        return base
-    if re.search(r"\d{2,3}(?:\.\d+)?\s*BPM$", base, re.IGNORECASE):
-        return base
-    joiner = str(separator)
-    bare_bpm = re.search(rf"(?:^|[_\-\s]){re.escape(value)}$", base)
-    if bare_bpm:
-        prefix = base[:bare_bpm.start()]
-        return f"{prefix}{joiner if joiner else ''}{value}BPM" if prefix else f"{value}BPM"
-    return f"{base}{joiner if joiner else ''}{value}BPM" if base else f"{value}BPM"
+    source = Path(path)
+    stat = source.stat()
+    mime_type, _encoding = mimetypes.guess_type(source.name)
+    metadata: dict[str, Any] = {
+        "file": {
+            "name": source.name,
+            "stem": source.stem,
+            "extension": source.suffix.lstrip(".").casefold(),
+            "size_bytes": stat.st_size,
+            "created_ns": stat.st_ctime_ns,
+            "created_date": datetime.fromtimestamp(stat.st_ctime).strftime("%Y%m%d"),
+            "modified_ns": stat.st_mtime_ns,
+            "mime_type": mime_type or "application/octet-stream",
+        }
+    }
+    if root is not None:
+        try:
+            metadata["file"]["relative_path"] = str(source.relative_to(Path(root)))
+        except ValueError:
+            pass
+    return metadata
 
 
 def is_generated_workbook(path: Path) -> bool:
@@ -318,7 +83,7 @@ def is_generated_workbook(path: Path) -> bool:
 
 def is_generated_structure(path: Path) -> bool:
     """The structure companion is an export artifact, not source content."""
-    return path.name.casefold() in {"structure.ffnf.txt", "filetree.txt"}
+    return path.name.casefold() == "filetree.txt"
 
 
 def _windows_file_attributes(path: Path) -> int:
@@ -356,20 +121,31 @@ class FileRecord:
     status: str = "Ready"
     status_detail: str = ""
     target_name: str = ""
+    # The unsuffixed workflow target is retained so conflict disambiguation
+    # can be recomputed after a preview refresh without stacking `_01` again.
+    workflow_base_target_name: str = ""
     excel_source: str = ""
     group_key: str = ""
     extension_original: str = ""
     removed: bool = False
     parsed_fields: dict[str, str] = field(default_factory=dict)
-    bpm: str = ""
-    bpm_source: str = ""
-    scale: str = ""
-    bpm_suffix_enabled: bool = False
+    metadata: dict[str, Any] = field(default_factory=dict)
     parse_unmatched: str = ""
     parse_confidence: float = 0.0
     parse_error: str = ""
     association_id: str = ""
     associated_extensions: list[str] = field(default_factory=list)
+    # Values entered through the active declarative workflow.  They are kept
+    # separate from the legacy fields so the default workflow remains fully
+    # compatible with existing imports and undo history.
+    workflow_values: dict[str, str] = field(default_factory=dict)
+    workflow_candidates: dict[str, list[str]] = field(default_factory=dict)
+    workflow_candidate_details: dict[str, list[dict[str, str]]] = field(default_factory=dict)
+    workflow_derived: dict[str, Any] = field(default_factory=dict)
+    workflow_actions: set[str] = field(default_factory=set)
+    workflow_auto_fields: set[str] = field(default_factory=set)
+    workflow_number_fields: set[str] = field(default_factory=set)
+    workflow_manual_fields: set[str] = field(default_factory=set)
 
     def __post_init__(self):
         if not self.name:
@@ -401,11 +177,18 @@ class NamingGroup:
     prefix: str = ""
     relative_folder: str = ""
     meta_prefix: str = ""
+    workflow_values: dict[str, str] = field(default_factory=dict)
+    workflow_candidates: dict[str, list[str]] = field(default_factory=dict)
+    # A workflow may combine several extensions into one logical group. The
+    # legacy ``extension`` value remains for compatibility with single-format
+    # groups, while this list drives the mixed-format label and API payload.
+    extensions: list[str] = field(default_factory=list)
 
     @property
     def label(self) -> str:
         folder = self.relative_folder or self.folder_name
-        return f"{folder} / {self.extension.lstrip('.').upper() or '无扩展名'} ({len(self.records)})"
+        extension_label = "图像" if self.extension == ".image" else self.extension.lstrip(".").upper() or "无扩展名"
+        return f"{folder} / {extension_label} ({len(self.records)})"
 
 
 def directory_prefix_defaults(root: str | Path, directory: str | Path,
@@ -507,7 +290,8 @@ class ExcelMatchResult:
 
 def scan_folder(root: str | Path, include_hidden: bool = False,
                 include_system: bool = False,
-                directory_mapping: dict[str, int | None] | None = None) -> ScanResult:
+                directory_mapping: dict[str, int | None] | None = None,
+                metadata_reader: Any | None = None) -> ScanResult:
     root_path = Path(root).expanduser().resolve()
     if not root_path.is_dir():
         raise NotADirectoryError(str(root_path))
@@ -556,8 +340,11 @@ def scan_folder(root: str | Path, include_hidden: bool = False,
                 extension_original=original_ext,
                 child_prefix=default_child,
             )
-            if is_bpm_extension(ext):
-                rec.bpm, rec.bpm_source = detect_bpm(path, path.stem)
+            try:
+                reader = metadata_reader or read_file_metadata
+                rec.metadata = reader(path, root_path)
+            except (OSError, ValueError, TypeError) as exc:
+                rec.metadata = {"file": {"error": str(exc)}}
             records.append(rec)
             counts[ext] = counts.get(ext, 0) + 1
             group = groups.get(rec.group_key)
@@ -570,6 +357,7 @@ def scan_folder(root: str | Path, include_hidden: bool = False,
                     prefix=default_group,
                     relative_folder=relative_folder,
                     meta_prefix=default_meta,
+                    extensions=[ext],
                 )
                 groups[rec.group_key] = group
             group.records.append(rec)
@@ -638,9 +426,6 @@ def compose_filename(meta_prefix: str, group_prefix: str, child_prefix: str,
 _TEMPLATE_FIELDS = {
     "name": r"(?P<name>.+?)",
     "stem": r"(?P<name>.+?)",
-    "bpm": r"(?P<bpm>\d{2,3})(?:\s*BPM)?",
-    "key": r"(?P<key>[A-Ga-g](?:#|b)?(?:m|min|minor|maj|major)?)",
-    "scale": r"(?P<scale>.+?)",
     "number": r"(?P<number>\d{1,5})",
     "type": r"(?P<type>.+?)",
     "category": r"(?P<category>.+?)",
@@ -649,8 +434,11 @@ _TEMPLATE_FIELDS = {
 }
 
 
-def _template_regex(template: str) -> tuple[re.Pattern[str] | None, list[str]]:
+def _template_regex(template: str, field_patterns: dict[str, str] | None = None) -> tuple[re.Pattern[str] | None, list[str]]:
     """Compile a simple ``{field}`` filename template into a full regex."""
+    patterns = dict(_TEMPLATE_FIELDS)
+    if field_patterns:
+        patterns.update({str(key).casefold(): str(value) for key, value in field_patterns.items()})
     if not template or template.strip().casefold() in {"auto", "自动"}:
         return None, []
     parts: list[str] = []
@@ -659,7 +447,7 @@ def _template_regex(template: str) -> tuple[re.Pattern[str] | None, list[str]]:
     for match in re.finditer(r"\{([\w*]+)\}", template):
         parts.append(re.escape(template[cursor:match.start()]))
         field_name = match.group(1).casefold()
-        pattern = _TEMPLATE_FIELDS.get(field_name)
+        pattern = patterns.get(field_name)
         if pattern is None:
             # Unknown placeholders are treated as literal text rather than
             # silently accepting a malformed template.
@@ -679,16 +467,18 @@ def _template_regex(template: str) -> tuple[re.Pattern[str] | None, list[str]]:
         return None, []
 
 
-def parse_filename(stem: str, template: str = "auto") -> dict[str, Any]:
+def parse_filename(stem: str, template: str = "auto",
+                   field_patterns: dict[str, str] | None = None) -> dict[str, Any]:
     """Parse a filename stem for preview and optional name generation.
 
-    Templates use placeholders such as ``{type}_{name}_{number}_{bpm}``.
-    ``auto`` recognizes trailing numbers, BPM tokens and musical keys without
-    treating every number as a sequence number.
+    The core only knows generic naming tokens.  A workflow may provide extra
+    field patterns through a module-owned parser before calling this function.
+    ``auto`` recognizes a trailing number without treating every number as a
+    sequence number.
     """
     source = str(stem or "")
     auto_mode = not template or template.strip().casefold() in {"auto", "自动"}
-    regex, fields = _template_regex(template)
+    regex, fields = _template_regex(template, field_patterns)
     if not auto_mode and regex is None:
         return {"stem": source, "fields": {}, "unmatched": source,
                 "confidence": 0.0, "matched": False, "template": template,
@@ -707,17 +497,6 @@ def parse_filename(stem: str, template: str = "auto") -> dict[str, Any]:
 
     working = source
     fields_out: dict[str, str] = {}
-    bpm_match = re.search(r"(?<!\d)(\d{2,3})\s*BPM(?![A-Za-z])", working, re.IGNORECASE)
-    if bpm_match:
-        fields_out["bpm"] = bpm_match.group(1)
-        working = (working[:bpm_match.start()] + working[bpm_match.end():]).strip(" _-.,")
-    key_match = re.search(
-        r"(?<![A-Za-z])([A-Ga-g](?:#|b)?(?:m|min|minor|maj|major)?)(?![A-Za-z])",
-        working,
-    )
-    if key_match and (len(key_match.group(1)) > 1 or key_match.group(1).upper() in "ABCDEFG"):
-        fields_out["key"] = key_match.group(1)
-        working = (working[:key_match.start()] + working[key_match.end():]).strip(" _-.,")
     number_match = re.search(r"(?:^|[_\-\s])([0-9]{1,5})$", working)
     if number_match:
         fields_out["number"] = number_match.group(1)
@@ -739,11 +518,12 @@ def parse_filename(stem: str, template: str = "auto") -> dict[str, Any]:
 
 
 def apply_filename_parse(records: Sequence[FileRecord], template: str = "auto",
-                         use_name: bool = False) -> None:
+                         use_name: bool = False,
+                         parser: Callable[[str, str], dict[str, Any]] | None = None) -> None:
     for record in records:
         previous_parsed_name = record.parsed_fields.get("name", "")
         previous_name = record.name
-        parsed = parse_filename(record.stem, template)
+        parsed = parser(record.stem, template) if parser else parse_filename(record.stem, template)
         record.parsed_fields = dict(parsed.get("fields", {}))
         record.parse_unmatched = str(parsed.get("unmatched", ""))
         record.parse_confidence = float(parsed.get("confidence", 0.0) or 0.0)
@@ -806,6 +586,8 @@ def preflight(records: Sequence[FileRecord], separator: str = "_") -> list[Valid
     for record in records:
         if not record.selected:
             continue
+        if record.status == "Conflict" and record.status_detail.startswith("缺少工作流必填字段"):
+            issues.append(ValidationIssue(record, "workflow_required", record.status_detail))
         source = record.source_path
         target_name = record.target_name or compose_filename("", "", record.child_prefix, record.name,
                                                             record.extension_original or record.extension, separator)
@@ -1343,32 +1125,35 @@ def _excel_name(value: str, extension: str) -> str:
     return value
 
 
-_EXCEL_NAME_TEMPLATE = re.compile(r"\{(bpm|scale)\}", re.IGNORECASE)
+_EXCEL_NAME_TEMPLATE = re.compile(r"\{([a-zA-Z][a-zA-Z0-9_.-]*)\}")
 
 
 def _expand_excel_name_template(value: str, record: FileRecord,
-                                bpm: str = "", scale: str = "") -> str:
-    """Expand metadata placeholders in an Excel B-column name.
+                                row_values: dict[str, str] | None = None,
+                                value_expander: Callable[[str, FileRecord, dict[str, str]], str] | None = None) -> str:
+    """Expand placeholders through a caller-supplied workflow policy.
 
-    Values supplied by the spreadsheet take precedence over detected file
-    metadata.  Empty placeholders are removed and generated duplicate
-    separators are collapsed so ``{scale}_{bpm}`` becomes ``150`` when
-    Scale is intentionally left blank.
+    The core fallback only uses values from the spreadsheet header row. A
+    workflow can provide ``value_expander`` to combine those values with its
+    own metadata namespace and normalizers.
     """
     source = _excel_name(value, record.extension)
+    values = {str(key).casefold(): _excel_value(item)
+              for key, item in (row_values or {}).items()}
+    if value_expander:
+        return value_expander(source, record, values)
     if not _EXCEL_NAME_TEMPLATE.search(source):
         return source
-    replacements = {"bpm": _excel_value(bpm) or record.bpm,
-                    "scale": _excel_value(scale) or record.scale}
     expanded = _EXCEL_NAME_TEMPLATE.sub(
-        lambda match: replacements.get(match.group(1).casefold(), ""), source
+        lambda match: values.get(match.group(1).casefold(), ""), source
     )
     expanded = re.sub(r"([ _.-])\1+", r"\1", expanded)
     return expanded.strip(" _-.")
 
 
 def import_xlsx(xlsx_path: str | Path, group: NamingGroup,
-                sheet_name: str | None = None) -> ExcelMatchResult:
+                sheet_name: str | None = None,
+                value_expander: Callable[[str, FileRecord, dict[str, str]], str] | None = None) -> ExcelMatchResult:
     if load_workbook is None:
         raise RuntimeError("需要安装 openpyxl 才能导入 XLSX")
     workbook = load_workbook(xlsx_path, read_only=True, data_only=True)
@@ -1393,21 +1178,16 @@ def import_xlsx(xlsx_path: str | Path, group: NamingGroup,
     records_by_key = {_match_key(record.original_name, group.extension): record for record in group.records}
     unmatched_files = list(group.records)
     detail_mode = False
-    bpm_index: int | None = None
-    scale_index: int | None = None
+    headers: list[str] = []
     if rows:
         headers = [str(value or "").strip().casefold() for value in rows[0]]
-        header_tokens = {"source", "sourcename", "source name", "原文件名", "源文件名", "newname", "new name", "新名称", "新文件名", "relativepath", "relative path", "相对路径", "bpm", "tempo", "scale", "调式", "调性"}
+        header_tokens = {"source", "sourcename", "source name", "原文件名", "源文件名", "newname", "new name", "新名称", "新文件名", "relativepath", "relative path", "相对路径"}
         if any(token in header_tokens for token in headers):
             detail_mode = True
             source_index = next((index for index, value in enumerate(headers)
                                  if value in {"source", "sourcename", "source name", "原文件名", "源文件名"}), 0)
             name_index = next((index for index, value in enumerate(headers)
                                if value in {"newname", "new name", "新名称", "新文件名", "name", "名称"}), 1 if len(headers) > 1 else None)
-            bpm_index = next((index for index, value in enumerate(headers)
-                              if value in {"bpm", "tempo", "速度"}), None)
-            scale_index = next((index for index, value in enumerate(headers)
-                                if value in {"scale", "调式", "调性", "key", "调"}), None)
             data_rows = rows[1:]
         else:
             source_index, name_index, data_rows = 0, 1 if sheet.max_column >= 2 else None, rows
@@ -1433,10 +1213,12 @@ def import_xlsx(xlsx_path: str | Path, group: NamingGroup,
                     unmatched_files.remove(record)
                 matched_without_name.append(record)
                 continue
-            row_bpm = _excel_value(row[bpm_index] if bpm_index is not None and len(row) > bpm_index else "")
-            row_scale = _excel_value(row[scale_index] if scale_index is not None and len(row) > scale_index else "")
-            record.scale = row_scale
-            new_name = _expand_excel_name_template(new_name, record, row_bpm, row_scale)
+            row_values = {
+                headers[index]: _excel_value(cell)
+                for index, cell in enumerate(row)
+                if index < len(headers) and headers[index]
+            }
+            new_name = _expand_excel_name_template(new_name, record, row_values, value_expander)
             if not new_name:
                 warnings.append(f"WARN Excel 第 {row_number} 行 B 列模板展开后为空，跳过: {source}")
                 if record in unmatched_files:
@@ -1515,47 +1297,10 @@ def _structure_directories(root: str | Path, include_hidden: bool = False,
     return children, max_depth
 
 
-def _write_tree_export(root: str | Path, output_name: str,
-                       include_hidden: bool = False,
-                       include_system: bool = False) -> Path | None:
-    """Write a root-level directory tree without overwriting an existing file."""
-    root_path = Path(root).expanduser().resolve()
-    children, max_depth = _structure_directories(root_path, include_hidden, include_system)
-    if max_depth < 3:
-        return None
-    output = root_path / output_name
-    if output.exists():
-        return None
-    lines = [root_path.name or str(root_path)]
-
-    def append_children(parent: Path, indent: str = "") -> None:
-        entries = children.get(parent, [])
-        for index, child in enumerate(entries):
-            last = index == len(entries) - 1
-            lines.append(f"{indent}{'└─' if last else '├─'} {child.name}")
-            append_children(child, indent + ("   " if last else "│  "))
-
-    append_children(root_path)
-    output.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return output
-
-
-def _write_structure_export(root: str | Path, include_hidden: bool = False,
-                            include_system: bool = False) -> Path | None:
-    """Backward-compatible name for the original structure export."""
-    return _write_tree_export(root, "Structure.ffnf.txt", include_hidden, include_system)
-
-
 def _write_filetree_export(root: str | Path, generated_tables: dict[str, Path],
                            include_hidden: bool = False,
                            include_system: bool = False) -> Path | None:
-    """Write an index of content directories that received an XLSX export.
-
-    ``Structure.ffnf.txt`` remains the legacy complete directory tree. The
-    user-facing ``filetree.txt`` is intentionally narrower: it only records
-    directories represented by a workbook generated in this export operation
-    and the corresponding workbook path.
-    """
+    """Write an index of content directories that received an XLSX export."""
     root_path = Path(root).expanduser().resolve()
     _children, max_depth = _structure_directories(root_path, include_hidden, include_system)
     if max_depth < 3 or not generated_tables:
@@ -1614,12 +1359,25 @@ def collect_directory_statistics(root: str | Path, records: Sequence[FileRecord]
     }
 
 
+def _flatten_metadata(value: Any, prefix: str = "") -> dict[str, Any]:
+    flattened: dict[str, Any] = {}
+    if isinstance(value, dict):
+        for key, child in value.items():
+            child_prefix = f"{prefix}.{key}" if prefix else str(key)
+            flattened.update(_flatten_metadata(child, child_prefix))
+    elif prefix:
+        flattened[prefix] = value
+    return flattened
+
+
 def export_filename_tables(root: str | Path, selected_extensions: Iterable[str],
-                           include_hidden: bool = False, include_system: bool = False) -> list[Path]:
+                           include_hidden: bool = False, include_system: bool = False,
+                           metadata_reader: Callable[[str | Path, str | Path | None], dict[str, Any]] | None = None) -> list[Path]:
     if Workbook is None:
         raise RuntimeError("需要安装 openpyxl 才能导出 XLSX")
     selected = {normalise_ext(ext).casefold() for ext in selected_extensions}
-    result = scan_folder(root, include_hidden=include_hidden, include_system=include_system)
+    result = scan_folder(root, include_hidden=include_hidden, include_system=include_system,
+                         metadata_reader=metadata_reader)
     by_folder: dict[str, list[FileRecord]] = {}
     for record in result.records:
         if record.extension.casefold() in selected:
@@ -1644,16 +1402,20 @@ def export_filename_tables(root: str | Path, selected_extensions: Iterable[str],
             used_titles.add(title)
             sheet = workbook.create_sheet(title)
             ordered_records = sorted(ext_records, key=lambda item: natural_key(item.stem))
-            sheet.append(["SourceName", "NewName", "RelativePath", "Folder", "Extension", "SizeBytes", "ModifiedTime", "Association", "BPM", "Scale"])
+            metadata_values = [_flatten_metadata(record.metadata) for record in ordered_records]
+            metadata_keys = sorted({key for values in metadata_values for key in values}, key=natural_key)
+            metadata_headers = [f"Metadata.{key}" for key in metadata_keys]
+            sheet.append(["SourceName", "NewName", "RelativePath", "Folder", "Extension", "SizeBytes", "ModifiedTime", "Association", *metadata_headers])
             for record in ordered_records:
                 try:
                     stat = Path(record.path).stat()
                     size, modified = int(stat.st_size), datetime.fromtimestamp(stat.st_mtime).isoformat(timespec="seconds")
                 except OSError:
                     size, modified = "", ""
+                values = _flatten_metadata(record.metadata)
                 sheet.append([record.stem, "", record.relative_folder, record.folder_name,
                               record.extension, size, modified, record.association_id,
-                              record.bpm, ""])
+                              *[values.get(key, "") for key in metadata_keys]])
         stats = collect_directory_statistics(root, result.records, include_hidden, include_system)
         metadata = workbook.create_sheet("Metadata")
         metadata.append(["Field", "Value"])
@@ -1673,27 +1435,13 @@ def export_filename_tables(root: str | Path, selected_extensions: Iterable[str],
         workbook.save(output)
         outputs.append(output)
         generated_tables[folder_text] = output
-    # Deep folder trees get a companion map at the selected root.  It is
-    # intentionally generated after the workbooks so a failed workbook write
-    # cannot leave a misleading structure file behind.
+    # Generate the index after the workbooks so a failed workbook write cannot
+    # leave a misleading map behind.
     if by_folder:
-        structure = _write_structure_export(root, include_hidden, include_system)
-        if structure is not None:
-            outputs.append(structure)
         filetree = _write_filetree_export(root, generated_tables, include_hidden, include_system)
         if filetree is not None:
             outputs.append(filetree)
     return outputs
-
-
-def wav_duration(path: str | Path) -> float:
-    try:
-        with wave.open(str(path), "rb") as stream:
-            frames = stream.getnframes()
-            rate = stream.getframerate() or 1
-            return frames / rate
-    except (OSError, wave.Error):
-        return 0.0
 
 
 def open_in_explorer(path: str | Path) -> None:

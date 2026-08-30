@@ -1,0 +1,174 @@
+{
+  "schema_version": 1,
+  "id": "wallpaper-assets",
+  "name": "壁纸管理",
+  "version": "1.0.0",
+  "description": "为壁纸文件生成方向、比例、像素尺寸、风格、来源和获取日期组成的文件名。同一目录下的可识别图像不分扩展名合并管理；复杂比例会自动吸附到最近的常见屏幕比例；可自动识别的值会直接预填，用户手工填写的值优先。",
+  "builtin": true,
+  "kind": "wallpaper-assets",
+  "separator": "_",
+  "name_modes": ["original"],
+  "excel_field": "",
+  "excel_placeholders": {},
+  "metadata_providers": [{"provider": "image_dimensions"}],
+  "filename_parser": "wallpaper",
+  "grouping": {"mode": "directory", "filter": "image"},
+  "actions": [],
+  "fields": [
+    {
+      "id": "orientation",
+      "label": "方向",
+      "scope": "record",
+      "kind": "choice",
+      "required": true,
+      "sources": ["metadata", "manual"],
+      "quick_tags": ["横屏", "竖屏", "方形"]
+    },
+    {
+      "id": "aspect_ratio",
+      "label": "比例",
+      "scope": "record",
+      "kind": "text",
+      "required": true,
+      "sources": ["metadata", "manual"],
+      "extractor": "metadata.image.aspect_ratio_token"
+    },
+    {
+      "id": "dimensions",
+      "label": "尺寸",
+      "scope": "record",
+      "kind": "text",
+      "required": true,
+      "sources": ["metadata", "manual"],
+      "extractor": "derived.pixel_size"
+    },
+    {
+      "id": "style",
+      "label": "风格",
+      "scope": "record",
+      "kind": "text",
+      "required": true,
+      "sources": ["filename", "manual"],
+      "extractor": "parent"
+    },
+    {
+      "id": "source",
+      "label": "来源",
+      "scope": "record",
+      "kind": "text",
+      "required": true,
+      "sources": ["filename", "manual"],
+      "quick_tags": [
+        {"label": "Pixiv", "value": "Pixiv"},
+        {"label": "Wallhaven", "value": "Wallhaven"},
+        {"label": "Unsplash", "value": "Unsplash"},
+        {"label": "Bing", "value": "Bing"},
+        {"label": "ArtStation", "value": "ArtStation"},
+        {"label": "Behance", "value": "Behance"},
+        {"label": "DeviantArt", "value": "DeviantArt"},
+        {"label": "Dribbble", "value": "Dribbble"},
+        {"label": "Pexels", "value": "Pexels"},
+        {"label": "Reddit", "value": "Reddit"}
+      ],
+      "extractor": "record.parsed_fields.source"
+    },
+    {
+      "id": "acquired_date",
+      "label": "获取时间",
+      "scope": "record",
+      "kind": "text",
+      "required": true,
+      "sources": ["metadata", "manual"],
+      "extractor": "metadata.file.created_date"
+    }
+  ],
+  "derived": [
+    {
+      "id": "pixel_size",
+      "expression": {
+        "op": "concat",
+        "args": [
+          {"path": "metadata.image.width"},
+          {"value": "x"},
+          {"path": "metadata.image.height"}
+        ]
+      }
+    }
+  ],
+  "rules": [
+    {
+      "id": "wallpaper-landscape",
+      "when": {"path": "metadata.image.orientation", "op": "equals", "value": "landscape"},
+      "then": {"field": "orientation", "value": "横屏", "mode": "assign", "reason": "图像宽度大于高度"}
+    },
+    {
+      "id": "wallpaper-portrait",
+      "when": {"path": "metadata.image.orientation", "op": "equals", "value": "portrait"},
+      "then": {"field": "orientation", "value": "竖屏", "mode": "assign", "reason": "图像高度大于宽度"}
+    },
+    {
+      "id": "wallpaper-square",
+      "when": {"path": "metadata.image.orientation", "op": "equals", "value": "square"},
+      "then": {"field": "orientation", "value": "方形", "mode": "assign", "reason": "图像宽高相等"}
+    },
+    {
+      "id": "wallpaper-ratio",
+      "when": {"path": "metadata.image.aspect_ratio_token", "op": "exists"},
+      "then": {"field": "aspect_ratio", "value_from": "metadata.image.aspect_ratio_token", "mode": "assign"}
+    },
+    {
+      "id": "wallpaper-size",
+      "when": {"path": "derived.pixel_size", "op": "exists"},
+      "then": {"field": "dimensions", "value_from": "derived.pixel_size", "mode": "assign"}
+    },
+    {
+      "id": "wallpaper-style",
+      "when": {"path": "record.folder_name", "op": "exists"},
+      "then": {"field": "style", "value_from": "record.folder_name", "mode": "assign", "reason": "使用图片所在的直接父目录名"}
+    },
+    {
+      "id": "wallpaper-source",
+      "when": {"path": "record.parsed_fields.source", "op": "exists"},
+      "then": {"field": "source", "value_from": "record.parsed_fields.source", "mode": "assign", "reason": "识别文件名中的来源前缀"}
+    },
+    {
+      "id": "wallpaper-created-date",
+      "when": {"path": "metadata.file.created_date", "op": "exists"},
+      "then": {"field": "acquired_date", "value_from": "metadata.file.created_date", "mode": "assign"}
+    }
+  ],
+  "template": [
+    {"field": "orientation"},
+    {"field": "aspect_ratio"},
+    {"field": "dimensions"},
+    {"field": "style"},
+    {"field": "source"},
+    {"field": "acquired_date"}
+  ],
+  "suffix_modes": {},
+  "suffix_options": [],
+  "numbering": {
+    "enabled": false,
+    "field": "",
+    "width": 2,
+    "start": 1,
+    "step": 1,
+    "group_by": [],
+    "manual": true,
+    "skip_disk_existing": true
+  },
+  "examples": [
+    {
+      "input": "wallhaven-po7drp.png",
+      "confirmed_values": {
+        "orientation": "横屏",
+        "aspect_ratio": "16x9",
+        "dimensions": "3840x2160",
+        "style": "Dark",
+        "source": "wallhaven",
+        "acquired_date": "20260829"
+      },
+      "output": "横屏_16x9_3840x2160_Dark_wallhaven_20260829.png"
+    }
+  ]
+}

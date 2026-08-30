@@ -22,6 +22,7 @@
         <button class="button button-quiet" id="pickFolder" title="打开 Windows 文件夹选择器"><span class="icon">⌂</span>选择</button>
         <button class="button button-primary" id="scanButton"><span class="icon">⌕</span>扫描</button>
       </div>
+      <a class="button button-quiet" id="openTagManager" href="/tag-manager?workflow=default" target="tag-manager" title="打开快捷标签管理器"><span class="icon">⌘</span>标签管理</a>
       <button class="button button-quiet theme-toggle" id="themeToggle" title="切换深色模式"><span class="icon" id="themeIcon">☾</span><span id="themeLabel">深色</span></button>
       <!-- <div class="top-status"><span class="status-dot"></span><span>离线运行</span></div> -->
     </header>
@@ -67,16 +68,22 @@
             <div><h1>目标文件名</h1><p>先编辑预览，再执行重命名。原扩展名始终保留。</p></div>
             <div class="heading-actions">
               <button class="button button-quiet" id="previewButton"><span class="icon">◌</span>刷新预览</button>
-              <button class="button button-quiet" id="addBpmSuffixButton" title="按音频或 MIDI 的 metadata/文件名添加 BPM 后缀"><span class="icon">♫</span>添加 BPM 后缀</button>
+              <button class="button button-quiet" id="fillWorkflowButton" title="将所有未手工修改的候选值一次写入"><span class="icon">⇣</span>填充自动值</button>
+              <div class="workflow-actions" id="workflowActions"></div>
               <button class="button button-primary" id="renameGroupButton"><span class="icon">↗</span>重命名当前组</button>
               <button class="button button-dark" id="renameAllButton"><span class="icon">✓</span>执行已选组</button>
             </div>
           </div>
 
           <div class="settings-panel">
-            <div class="field field-wide"><label>元前缀</label><input id="metaPrefix" type="text" placeholder="默认使用根文件夹名称"></div>
-            <div class="field field-wide"><label>组前缀</label><input id="groupPrefix" type="text" placeholder="当前文件夹名称"></div>
-            <div class="field"><label>子前缀</label><input id="childPrefix" type="text" placeholder="可批量应用"></div>
+            <div class="workflow-toolbar">
+              <div class="field workflow-select-field"><label for="workflowSelect">命名工作流</label><select id="workflowSelect"><option value="default">默认工作流</option></select></div>
+              <button class="button button-quiet" id="importWorkflow" title="导入 .ffnf-workflow 或 workflow.json"><span class="icon">⇧</span>导入工作流</button>
+              <button class="button button-quiet" id="exportWorkflow" title="导出当前工作流"><span class="icon">⇩</span>导出工作流</button>
+              <input id="workflowFile" type="file" accept=".ffnf-workflow,.json,application/json" hidden>
+              <span class="workflow-description" id="workflowDescription"></span>
+            </div>
+            <div class="workflow-fields-panel" id="workflowFields"></div>
             <div class="field small-field"><label>分隔符</label><input id="separator" type="text" value="_" maxlength="8"></div>
             <div class="field mode-field"><label>名称模式</label><select id="nameMode"><option value="original">原文件名</option><option value="numeric">数字编号</option><option value="excel">Excel 名称</option></select></div>
             <div class="numeric-fields hidden" id="numericFields">
@@ -97,11 +104,11 @@
             <div class="parse-panel">
               <div class="parse-title">文件名解析模板</div>
               <div class="parse-controls">
-                <input id="parseTemplate" type="text" placeholder="auto 或 {type}_{name}_{number}_{bpm}">
+                <input id="parseTemplate" type="text" placeholder="auto 或 {type}_{name}_{number}">
                 <label class="check-row"><input id="parseUseName" type="checkbox"><span>将解析出的 name 用作名称</span></label>
                 <button class="button button-quiet" id="parsePreviewButton">解析预览</button>
               </div>
-              <div class="parse-help">支持 {name}、{type}、{number}、{bpm}、{scale}、{key}、{category}；Excel B 列也可使用 {bpm}/{scale}；解析只影响预览，除非勾选使用 name。</div>
+              <div class="parse-help" id="parseHelp">解析字段由当前工作流声明；解析只影响预览，除非勾选使用 name。</div>
             </div>
           </div>
 
@@ -121,8 +128,8 @@
 
           <div class="table-shell">
             <table class="file-table">
-              <thead><tr><th class="check-col"><input type="checkbox" id="selectAll"></th><th>当前文件名</th><th>文件夹 / 相对路径</th><th>扩展名</th><th>子前缀</th><th>名称</th><th>解析结果</th><th>新文件名预览</th><th>状态</th><th class="action-col">播放</th><th class="action-col">单项</th><th class="action-col">移除</th></tr></thead>
-              <tbody id="fileRows"><tr><td colspan="12" class="empty-row">选择根目录并扫描文件</td></tr></tbody>
+              <thead><tr><th class="check-col"><input type="checkbox" id="selectAll"></th><th>当前文件名</th><th>文件夹 / 相对路径</th><th>扩展名</th><th>工作流字段</th><th>解析结果</th><th>新文件名预览</th><th>状态</th><th class="action-col">播放</th><th class="action-col">单项</th><th class="action-col">移除</th></tr></thead>
+              <tbody id="fileRows"><tr><td colspan="11" class="empty-row">选择根目录并扫描文件</td></tr></tbody>
             </table>
           </div>
 
