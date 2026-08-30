@@ -18,6 +18,7 @@
     status: "all",
     editingId: "",
     pendingCandidate: null,
+    deletingTag: null,
     workbookName: "",
     workbookExists: false,
   };
@@ -235,7 +236,7 @@
       <td><span class="tag-status${tag.enabled ? "" : " disabled"}">${tag.enabled ? "已启用" : "已停用"}</span></td>
       <td>${esc(tag.usage)}</td>
       <td><span class="tag-source">${esc(tag.source)}</span></td>
-      <td><button class="table-action" data-action="edit">编辑</button><button class="table-action" data-action="toggle">${tag.enabled ? "停用" : "启用"}</button></td>
+      <td><button class="table-action" type="button" data-action="edit">编辑</button><button class="table-action" type="button" data-action="toggle">${tag.enabled ? "停用" : "启用"}</button><button class="table-action danger" type="button" data-action="delete">删除</button></td>
     </tr>`).join("");
   }
 
@@ -357,6 +358,52 @@
     }
   }
 
+  function openDeleteModal(tag) {
+    state.deletingTag = { ...tag, fieldId: state.fieldId };
+    $("deleteTagField").textContent = currentField()?.label || state.fieldId;
+    $("deleteTagName").textContent = tag.label;
+    $("deleteTagModal").classList.remove("hidden");
+    window.setTimeout(() => $("confirmDeleteTag").focus(), 0);
+  }
+
+  function closeDeleteModal() {
+    $("deleteTagModal").classList.add("hidden");
+    state.deletingTag = null;
+  }
+
+  async function deleteTag() {
+    const tag = state.deletingTag;
+    if (!tag) return;
+    const confirmButton = $("confirmDeleteTag");
+    confirmButton.disabled = true;
+    try {
+      const response = await fetch("/api/workflow-values/tag", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ workflow_id: state.workflow.id, field_id: tag.fieldId, action: "delete", tag_id: tag.id }),
+      });
+      const payload = await response.json();
+      if (!response.ok || payload.ok === false || !payload.data) throw new Error(payload.error || "标签删除失败");
+      state.tags = payload.data.tags || state.tags;
+      state.workbookName = payload.data.workbook_name || state.workbookName;
+      state.workbookExists = !!payload.data.exists;
+      if (state.selectedTagId === tag.id) state.selectedTagId = "";
+      const candidate = state.candidates.find((item) => item.fieldId === tag.fieldId && item.value === tag.value && item.status === "approved");
+      if (candidate) {
+        candidate.status = "pending";
+        saveCandidates();
+      }
+      notifyWorkflowTagUpdate();
+      closeDeleteModal();
+      render();
+      showToast(`已删除“${tag.label}”`);
+    } catch (error) {
+      showToast(error.message, true);
+    } finally {
+      confirmButton.disabled = false;
+    }
+  }
+
   async function selectWorkflow(workflowId) {
     const response = await fetch(`/api/workflows?workflow_id=${encodeURIComponent(workflowId)}`, { cache: "no-store" });
     const payload = await response.json();
@@ -406,6 +453,7 @@
       if (!tag) return;
       if (event.target.dataset.action === "edit") openModal(tag);
       else if (event.target.dataset.action === "toggle") toggleTag(tag);
+      else if (event.target.dataset.action === "delete") openDeleteModal(tag);
       else { state.selectedTagId = tag.id; render(); }
     });
     $("candidateList").addEventListener("click", (event) => {
@@ -419,7 +467,15 @@
     $("closeModal").addEventListener("click", closeModal);
     $("cancelModal").addEventListener("click", closeModal);
     $("tagModal").addEventListener("click", (event) => { if (event.target === $("tagModal")) closeModal(); });
-    document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !$("tagModal").classList.contains("hidden")) closeModal(); });
+    $("confirmDeleteTag").addEventListener("click", deleteTag);
+    $("closeDeleteTag").addEventListener("click", closeDeleteModal);
+    $("cancelDeleteTag").addEventListener("click", closeDeleteModal);
+    $("deleteTagModal").addEventListener("click", (event) => { if (event.target === $("deleteTagModal")) closeDeleteModal(); });
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      if (!$("deleteTagModal").classList.contains("hidden")) closeDeleteModal();
+      else if (!$("tagModal").classList.contains("hidden")) closeModal();
+    });
   }
 
   async function boot() {

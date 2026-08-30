@@ -330,3 +330,12 @@ class WorkflowValueStore:
             raise ValueError("标签不存在")
         tag["enabled"] = not bool(tag.get("enabled", True))
         return self.write(workflow, payload["tags"])
+
+    def delete(self, workflow: dict[str, Any], field_id: str, tag_id: str) -> dict[str, Any]:
+        payload = self.read(workflow)
+        current = payload["tags"].get(field_id, [])
+        tag = next((item for item in current if item["id"] == tag_id), None)
+        if tag is None:
+            raise ValueError("标签不存在")
+        current.remove(tag)
+        return self.write(workflow, payload["tags"])

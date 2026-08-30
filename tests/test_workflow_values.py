@@ -72,6 +72,10 @@ class WorkflowValueStoreTests(unittest.TestCase):
             finally:
                 workbook.close()
 
+            deleted = store.delete(self.WORKFLOW, "meta_prefix", cymatics["id"])
+            self.assertNotIn(cymatics["id"], [tag["id"] for tag in deleted["tags"]["meta_prefix"]])
+            self.assertNotIn(cymatics["id"], [tag["id"] for tag in store.read(self.WORKFLOW)["tags"]["meta_prefix"]])
+
     def test_duplicate_values_and_fixed_fields_are_rejected(self):
         workflow = {
             **self.WORKFLOW,
@@ -84,6 +88,8 @@ class WorkflowValueStoreTests(unittest.TestCase):
                 store.upsert(workflow, "meta_prefix", {"label": "Duplicate", "value": "ONE"})
             with self.assertRaisesRegex(ValueError, "固定字段"):
                 store.upsert(workflow, "fixed", {"label": "Nope", "value": "nope"})
+            with self.assertRaisesRegex(ValueError, "标签不存在"):
+                store.delete(workflow, "meta_prefix", "missing-tag")
 
 
 if __name__ == "__main__":

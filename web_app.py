@@ -1793,6 +1793,8 @@ class Handler(BaseHTTPRequestHandler):
         action = str(payload.get("action", "upsert")).strip().casefold()
         if action == "toggle":
             data = WORKFLOW_VALUE_STORE.toggle(workflow, field_id, str(payload.get("tag_id", "")).strip())
+        elif action == "delete":
+            data = WORKFLOW_VALUE_STORE.delete(workflow, field_id, str(payload.get("tag_id", "")).strip())
         else:
             value = payload.get("tag", {})
             if not isinstance(value, dict):

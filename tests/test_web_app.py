@@ -65,6 +65,7 @@ class WebApiTests(unittest.TestCase):
         with urlopen(self.url + "/tag-manager") as response:
             manager_html = response.read().decode("utf-8")
         self.assertIn("快捷标签管理", manager_html)
+        self.assertIn('id="deleteTagModal"', manager_html)
         self.assertIn('target="main-app"', manager_html)
         self.assertNotIn("Beta 版", manager_html)
         self.assertNotIn("演示", manager_html)
@@ -121,6 +122,14 @@ class WebApiTests(unittest.TestCase):
                 })
                 toggled_tag = next(tag for tag in toggled["data"]["tags"]["author_code"] if tag["id"] == added_tag["id"])
                 self.assertFalse(toggled_tag["enabled"])
+
+                deleted = self.post("/api/workflow-values/tag", {
+                    "workflow_id": "sample-pack",
+                    "field_id": "author_code",
+                    "action": "delete",
+                    "tag_id": added_tag["id"],
+                })
+                self.assertNotIn(added_tag["id"], [tag["id"] for tag in deleted["data"]["tags"]["author_code"]])
 
                 with urlopen(self.url + "/api/state") as response:
                     active_state = json.loads(response.read().decode("utf-8"))["state"]

@@ -54,7 +54,7 @@
 .manager-table td { height: 57px; padding: 8px 9px; border-bottom: 1px solid #edf1ef; color: #43524f; vertical-align: middle; }
 .manager-table tr:hover td { background: var(--surface-soft); }
 .manager-index-col { width: 35px; color: var(--muted) !important; text-align: center !important; }
-.manager-action-col { width: 110px; }
+.manager-action-col { width: 145px; }
 .tag-title { color: var(--ink); font-weight: 700; }
 .tag-subline { display: block; margin-top: 4px; color: var(--muted); font: 10px Consolas, monospace; }
 .tag-aliases { max-width: 160px; color: var(--muted); line-height: 1.5; }
@@ -64,6 +64,7 @@
 .table-action { border: 0; padding: 4px 3px; color: var(--accent-dark); background: transparent; font-size: 10px; }
 .table-action:hover { text-decoration: underline; }
 .table-action + .table-action { margin-left: 7px; }
+.table-action.danger { color: var(--red); }
 .manager-empty { min-height: 260px; display: grid; place-items: center; padding: 25px; color: var(--muted); text-align: center; }
 .manager-empty strong { display: block; margin-bottom: 7px; color: var(--ink); font-size: 12px; }
 .candidate-section { margin-top: 20px; border-top: 1px solid var(--line); padding-top: 18px; }
@@ -92,6 +93,7 @@
 .manager-modal-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(21, 39, 34, .35); }
 .manager-modal-backdrop.hidden { display: none; }
 .manager-modal { width: min(530px, 100%); padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 22px 60px rgba(24, 50, 43, .22); }
+.manager-confirm-modal { width: min(430px, 100%); }
 .modal-heading { display: flex; align-items: flex-start; justify-content: space-between; }
 .modal-heading h2 { margin: 6px 0 0; font-size: 17px; }
 .modal-close { width: 28px; height: 28px; border: 0; color: var(--muted); background: transparent; font-size: 22px; line-height: 1; }
@@ -104,6 +106,9 @@
 .modal-check { display: flex; align-items: center; gap: 7px; color: #52635e; font-size: 11px; }
 .modal-check input { accent-color: var(--accent); }
 .modal-hint { margin: 16px 0 0; color: var(--muted); font-size: 10px; line-height: 1.6; }
+.confirm-copy { margin: 22px 0 0; color: var(--ink); font-size: 12px; line-height: 1.8; }
+.button-danger { color: #fff; border-color: var(--red); background: var(--red); }
+.button-danger:hover { filter: brightness(.95); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; padding-top: 15px; border-top: 1px solid var(--line); }
 .manager-page .toast { top: 88px; }
 @media (max-width: 1120px) {

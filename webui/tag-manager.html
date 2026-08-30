@@ -103,6 +103,14 @@
       <div class="modal-actions"><button class="button button-quiet" id="cancelModal" type="button">取消</button><button class="button button-primary" type="submit">保存标签</button></div>
     </form>
   </div>
+  <div class="manager-modal-backdrop hidden" id="deleteTagModal">
+    <div class="manager-modal manager-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="deleteTagTitle">
+      <div class="modal-heading"><div><span class="panel-kicker">不可撤销</span><h2 id="deleteTagTitle">删除标签</h2></div><button class="modal-close" id="closeDeleteTag" type="button" title="关闭">×</button></div>
+      <p class="confirm-copy">确定从 <strong id="deleteTagField">当前字段</strong> 中删除“<strong id="deleteTagName">这个标签</strong>”吗？</p>
+      <p class="modal-hint">删除会立即更新工作流 XLSX。只想暂时隐藏该标签时，请使用“停用”。</p>
+      <div class="modal-actions"><button class="button button-quiet" id="cancelDeleteTag" type="button">取消</button><button class="button button-danger" id="confirmDeleteTag" type="button">删除标签</button></div>
+    </div>
+  </div>
   <div id="toast" class="toast" role="status"></div>
   <script src="/assets/tag-manager.js"></script>
 </body>
