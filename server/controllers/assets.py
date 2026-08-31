@@ -29,6 +29,8 @@ class AssetController:
             self._asset(handler, "index.html", "text/html; charset=utf-8")
         elif path == "/tag-manager":
             self._asset(handler, "tag-manager.html", "text/html; charset=utf-8")
+        elif path == "/workflow-manager":
+            self._asset(handler, "workflow-manager.html", "text/html; charset=utf-8")
         elif path.startswith("/assets/"):
             name = path.removeprefix("/assets/")
             content_type = mimetypes.guess_type(name)[0] or "text/plain"

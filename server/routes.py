@@ -48,6 +48,12 @@ POST_METHOD_ROUTES = {
     "/api/export": "_export",
     "/api/export-scan": "_export_scan",
     "/api/pick-folder": "_pick_folder",
+    "/api/workflows/manage": "_workflows_manage",
+    "/api/workflow/inspect": "_inspect_workflow",
+    "/api/workflow/enable": "_workflow_enable",
+    "/api/workflow/uninstall": "_workflow_uninstall",
+    "/api/workflow/purge-data": "_workflow_purge_data",
+    "/api/workflow/delete-config": "_workflow_delete_config",
 }
 
 
@@ -146,6 +152,36 @@ def create_handler(*, state: Any, state_json: Any, asset_controller: Any,
 
         def _config(self) -> None:
             send_json(self, workflow_controller.update_config(json_body(self)))
+
+        def _workflows_manage(self) -> None:
+            send_json(self, workflow_controller.manage(json_body(self)))
+
+        def _inspect_workflow(self) -> None:
+            content_type = self.headers.get("Content-Type", "")
+            if "multipart/form-data" in content_type:
+                form = multipart_body(self)
+                upload = form.get("file")
+                if not isinstance(upload, tuple) or not upload[1]:
+                    raise ValueError("未选择工作流文件")
+                filename, data = upload
+            else:
+                payload = json_body(self)
+                filename = str(payload.get("filename", "workflow.json"))
+                source = payload.get("workflow", payload)
+                data = json.dumps(source, ensure_ascii=False).encode("utf-8")
+            send_json(self, workflow_controller.inspect(data, filename))
+
+        def _workflow_enable(self) -> None:
+            send_json(self, workflow_controller.set_enabled(json_body(self)))
+
+        def _workflow_uninstall(self) -> None:
+            send_json(self, workflow_controller.uninstall(json_body(self)))
+
+        def _workflow_purge_data(self) -> None:
+            send_json(self, workflow_controller.purge_data(json_body(self)))
+
+        def _workflow_delete_config(self) -> None:
+            send_json(self, workflow_controller.delete_config(json_body(self)))
 
         def _workflow_value_update(self) -> None:
             send_json(self, workflow_field_controller.update(json_body(self)))

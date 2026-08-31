@@ -30,6 +30,7 @@ python main.py
 - 历史文件保存到源代码/程序目录下的 `history\\history.json`，可在重启后撤销最近一次操作；撤销和还原通过文件 ID、SHA-256 与大小确认身份，预期文件名变化时会在原目录寻找唯一指纹候选；首次成功重命名时自动创建 `history` 文件夹。
 - 命名页支持目录层级映射、文件名模板解析预览和跨格式同 stem 关联；解析默认只展示结果，勾选使用 `name` 后才会参与目标文件名。
 - 命名页动态发现 `workflows/<插件目录>/workflow.json`，不维护固定工作流名单；安装、修改或移除任意数量的工作流都会在运行中刷新。目录还可带 `module-manifest.json` 和 `modules/`，其中的 provider、normalizer、文件名解析器和 runner 与该工作流一起加载、刷新和卸载，不会注册成跨工作流全局能力。
+- 顶栏“工作流管理”是独立管理页：表格列出全部工作流（软件内置 / 外部安装 / 配置型）与启用、信任、诊断状态，支持两步导入（先预检包内容与哈希、确认冲突策略与模块信任后再安装）、导出、停用/启用、卸载与清除数据。停用的工作流不加载任何模块代码；卸载先把安装目录移入 `installed-workflows/.trash` 隔离区，刷新验证通过后才清理，失败自动恢复，标签词库与用户字段值默认保留。安装记录与代码指纹保存在 `config.json` 的 `installations`，代码变更会标记“代码已变化”以便重新确认信任。
 - 扫描会为每个文件生成通用 `metadata.file`；当前 workflow 通过 `metadata_providers` 声明是否读取图像尺寸、采样包 BPM 等专用 metadata。模块 runner 可在 `on_user_request` 或 `after_scan` 时接收主程序分配的临时 item ID，并只返回“item ID + 输出槽 + 字符串”；输出槽由 workflow 绑定到稳定字段，结果先进入候选值，确认后才参与命名。
 - 软件配置保存在程序目录的 `config.json`；动态安装的模块工作流位于 `installed-workflows`。单个目录插件或模块缺失、无效不会阻止 WebUI 启动，零插件时自动进入基础模式。`.ffnf-workflow` 可同时携带模块清单与源码；因为受信任模块会在主进程执行，导入时必须显式确认来源可信，未知来源模块应等待后续隔离运行器。
 - 提供 [workflowgenerator.md](workflowgenerator.md) 作为 AI 工作流生成规范；其他 AI 按其中的连续访谈流程收集需求，生成并校验可导入的 `workflow.json` 或 `.ffnf-workflow`。

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="ColdLightVibe">
+  <meta name="version" content="1.0">
+  <title>工作流管理 · File Namer</title>
+  <link rel="icon" type="image/png" href="/assets/logo.png">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <link rel="stylesheet" href="/assets/workflow-manager.css">
+</head>
+<body class="manager-page">
+  <div class="manager-shell">
+    <header class="manager-topbar">
+      <a class="manager-brand" href="/" target="main-app" title="返回命名工作台">
+        <span class="brand-icon"><img src="/assets/logo.png" alt=""></span>
+        <span><strong>File Namer</strong><small>工作流管理</small></span>
+      </a>
+      <div class="manager-top-actions">
+        <a class="button button-quiet" href="/" target="main-app"><span class="icon">←</span>返回命名工作台</a>
+        <button class="button button-quiet" id="themeToggle" title="切换深色模式"><span class="icon" id="themeIcon">☾</span><span id="themeLabel">深色</span></button>
+      </div>
+    </header>
+
+    <main class="manager-content">
+      <section class="manager-heading">
+        <div>
+          <span class="manager-eyebrow">WORKFLOW MANAGEMENT</span>
+          <h1>工作流管理</h1>
+          <p>导入、导出、停用与卸载工作流。停用不会加载任何 Python 模块代码；卸载先移入隔离目录，验证通过后才清理。</p>
+        </div>
+        <div class="manager-context">
+          <input id="workflowFile" type="file" accept=".ffnf-workflow,.json,application/json" hidden>
+          <button class="button button-primary" id="importWorkflow" title="预检后导入 .ffnf-workflow 或 workflow.json"><span class="icon">⇧</span>导入工作流</button>
+          <button class="button button-quiet" id="refreshList" title="重新读取工作流目录"><span class="icon">↺</span>刷新</button>
+        </div>
+      </section>
+
+      <section class="manager-metrics" aria-label="工作流统计">
+        <div class="manager-metric"><span>工作流总数</span><strong id="metricTotal">0</strong></div>
+        <div class="manager-metric"><span>已启用</span><strong id="metricEnabled">0</strong></div>
+        <div class="manager-metric"><span>模块工作流</span><strong id="metricModule">0</strong></div>
+        <div class="manager-metric"><span>加载失败</span><strong id="metricFailed">0</strong></div>
+      </section>
+
+      <section class="manager-grid workflow-grid">
+        <section class="manager-main-panel workflow-main-panel">
+          <div class="manager-main-heading">
+            <div><span class="panel-kicker">工作流库存</span><h2 id="listTitle">全部工作流</h2><p id="listMeta">-</p></div>
+          </div>
+          <div class="manager-toolbar">
+            <label class="manager-search"><span>⌕</span><input id="workflowSearch" type="search" placeholder="搜索名称或 ID"></label>
+            <select id="kindFilter"><option value="all">全部来源</option><option value="resource">软件内置</option><option value="module">外部安装</option><option value="config">配置型</option></select>
+            <select id="stateFilter"><option value="all">全部状态</option><option value="enabled">已启用</option><option value="disabled">已停用</option><option value="failed">加载失败</option></select>
+            <span class="toolbar-spacer"></span><span class="manager-save-note" id="saveNote">安装目录：installed-workflows</span>
+          </div>
+          <div class="manager-table-wrap">
+            <table class="manager-table workflow-table">
+              <thead><tr><th class="manager-index-col">#</th><th>工作流</th><th>版本</th><th>状态</th><th>来源</th><th>信任</th><th>能力</th><th>诊断</th><th class="workflow-action-col">操作</th></tr></thead>
+              <tbody id="workflowRows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside class="manager-inspector workflow-inspector">
+          <div class="manager-panel-heading"><div><span class="panel-kicker">详情</span><h2>工作流详情</h2></div><span class="inspector-mark">◈</span></div>
+          <div id="workflowInspector" class="tag-inspector-empty">选择一行查看详情</div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <div class="manager-modal-backdrop hidden" id="importModal">
+    <div class="manager-modal workflow-import-modal" role="dialog" aria-modal="true" aria-labelledby="importTitle">
+      <div class="modal-heading"><div><span class="panel-kicker">导入预检</span><h2 id="importTitle">检查工作流包</h2></div><button class="modal-close" id="closeImport" type="button" title="关闭">×</button></div>
+      <p class="modal-hint" id="importHint">选择 .ffnf-workflow 包或 workflow.json 后，这里会先展示包内容，确认后再安装。</p>
+      <div id="importSummary" class="import-summary hidden"></div>
+      <div class="modal-options" id="importOptions">
+        <label class="modal-check"><input id="importTrust" type="checkbox"><span>信任此包并在本机执行其中的 Python 模块</span></label>
+      </div>
+      <p class="modal-hint" id="importConflictHint" class="hidden">该工作流 ID 已存在。</p>
+      <div class="modal-options" id="importConflictOptions">
+        <label class="modal-check"><input type="radio" name="importStrategy" value="copy" checked><span>作为副本导入</span></label>
+        <label class="modal-check"><input type="radio" name="importStrategy" value="replace"><span>替换现有版本</span></label>
+        <label class="modal-check"><input type="radio" name="importStrategy" value="cancel"><span>取消</span></label>
+      </div>
+      <div class="modal-actions"><button class="button button-quiet" id="cancelImport" type="button">取消</button><button class="button button-primary" id="confirmImport" type="button" disabled>安装工作流</button></div>
+    </div>
+  </div>
+
+  <div class="manager-modal-backdrop hidden" id="switchModal">
+    <div class="manager-modal manager-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="switchTitle">
+      <div class="modal-heading"><div><span class="panel-kicker">切换工作流</span><h2 id="switchTitle">需要先切换当前工作流</h2></div><button class="modal-close" id="closeSwitch" type="button" title="关闭">×</button></div>
+      <p class="confirm-copy">“<strong id="switchName">这个工作流</strong>”正在使用中，停用/卸载前请先切换到其他工作流：</p>
+      <label class="manager-field"><span>切换到</span><select id="switchSelect"></select></label>
+      <div class="modal-actions"><button class="button button-quiet" id="cancelSwitch" type="button">取消</button><button class="button button-primary" id="confirmSwitch" type="button">切换并继续</button></div>
+    </div>
+  </div>
+
+  <div class="manager-modal-backdrop hidden" id="disableModal">
+    <div class="manager-modal manager-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="disableTitle">
+      <div class="modal-heading"><div><span class="panel-kicker">停用工作流</span><h2 id="disableTitle">停用工作流</h2></div><button class="modal-close" id="closeDisable" type="button" title="关闭">×</button></div>
+      <p class="confirm-copy">确定停用“<strong id="disableName">这个工作流</strong>”吗？</p>
+      <p class="modal-hint">停用后它不再出现在工作流选择器中，Python 模块代码也不再加载；随时可以重新启用。</p>
+      <div class="modal-actions"><button class="button button-quiet" id="cancelDisable" type="button">取消</button><button class="button button-primary" id="confirmDisable" type="button">停用工作流</button></div>
+    </div>
+  </div>
+
+  <div class="manager-modal-backdrop hidden" id="uninstallModal">
+    <div class="manager-modal manager-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="uninstallTitle">
+      <div class="modal-heading"><div><span class="panel-kicker">可恢复卸载</span><h2 id="uninstallTitle">卸载工作流</h2></div><button class="modal-close" id="closeUninstall" type="button" title="关闭">×</button></div>
+      <p class="confirm-copy">确定卸载“<strong id="uninstallName">这个工作流</strong>”吗？</p>
+      <p class="modal-hint">安装目录会先移入隔离目录，刷新验证通过后才清理；卸载失败会自动恢复。标签词库和用户字段值保留。</p>
+      <div class="modal-actions"><button class="button button-quiet" id="cancelUninstall" type="button">取消</button><button class="button button-danger" id="confirmUninstall" type="button">卸载工作流</button></div>
+    </div>
+  </div>
+
+  <div class="manager-modal-backdrop hidden" id="purgeModal">
+    <div class="manager-modal manager-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="purgeTitle">
+      <div class="modal-heading"><div><span class="panel-kicker">不可撤销</span><h2 id="purgeTitle">清除工作流数据</h2></div><button class="modal-close" id="closePurge" type="button" title="关闭">×</button></div>
+      <p class="confirm-copy">确定清除“<strong id="purgeName">这个工作流</strong>”的标签词库和用户字段值吗？</p>
+      <p class="modal-hint">这会删除 workflow-values 中该工作流的 XLSX，且不可恢复；工作流本身不受影响。</p>
+      <div class="modal-actions"><button class="button button-quiet" id="cancelPurge" type="button">取消</button><button class="button button-danger" id="confirmPurge" type="button">清除数据</button></div>
+    </div>
+  </div>
+
+  <div class="manager-modal-backdrop hidden" id="deleteConfigModal">
+    <div class="manager-modal manager-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="deleteConfigTitle">
+      <div class="modal-heading"><div><span class="panel-kicker">删除配置</span><h2 id="deleteConfigTitle">删除配置型工作流</h2></div><button class="modal-close" id="closeDeleteConfig" type="button" title="关闭">×</button></div>
+      <p class="confirm-copy">确定删除配置型工作流“<strong id="deleteConfigName">这个工作流</strong>”吗？</p>
+      <p class="modal-hint">只删除 config.json 中的工作流定义；标签词库和用户字段值保留。想保留定义但不再使用，请改用“停用”。</p>
+      <div class="modal-actions"><button class="button button-quiet" id="cancelDeleteConfig" type="button">取消</button><button class="button button-danger" id="confirmDeleteConfig" type="button">删除配置</button></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script src="/assets/workflow-manager.js"></script>
+</body>
+</html>

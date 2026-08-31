@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from collections.abc import Callable
 from typing import Any
 
 from server.state import StateManager
 from workflow_system.catalog import workflow_summary
 from workflow_system.package import load_workflow_bundle
+from workflow_system.runtime import MODULE_MANIFEST_FILE_NAME
 from workflow_system.schema import validate_workflow
 from workflow_system.values import WorkflowValueStore
 
@@ -64,7 +67,8 @@ class WorkflowController:
         workflow, package_files = load_workflow_bundle(data, filename)
         with self.state.lock:
             imported, existed = self.state.workflow_catalog.install_package(
-                workflow, package_files, strategy, trust_modules=trust_modules
+                workflow, package_files, strategy, trust_modules=trust_modules,
+                package_sha256=hashlib.sha256(data).hexdigest(),
             )
             self.activate(imported["id"], persist=False)
             self.state.log("INFO", f"已导入工作流：{imported['name']}。")
@@ -95,3 +99,86 @@ class WorkflowController:
             },
             "state": self.state_json(),
         }
+
+    def manage(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Return the workflow management inventory."""
+        return {"ok": True, **self.state.workflow_catalog.manage_list()}
+
+    def inspect(self, data: bytes, filename: str = "workflow.json") -> dict[str, Any]:
+        """Preflight a package without executing or installing anything."""
+        workflow, package_files = load_workflow_bundle(data, filename)
+        digest = hashlib.sha256(data).hexdigest()
+        module_entries: list[dict[str, Any]] = []
+        manifest_error = ""
+        raw_manifest = package_files.get(MODULE_MANIFEST_FILE_NAME)
+        if raw_manifest:
+            try:
+                manifest = json.loads(raw_manifest.decode("utf-8"))
+                for module in manifest.get("modules", []) if isinstance(manifest, dict) else []:
+                    if not isinstance(module, dict):
+                        continue
+                    module_entries.append({
+                        "id": str(module.get("id", "")),
+                        "entrypoint": str(module.get("entrypoint", "")),
+                        "providers": sorted(str(key) for key in module.get("providers", {})),
+                        "normalizers": sorted(str(key) for key in module.get("normalizers", {})),
+                        "filename_parsers": sorted(str(key) for key in module.get("filename_parsers", {})),
+                        "runner": str(module.get("runner", "") or ""),
+                    })
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                manifest_error = f"module-manifest.json 解析失败: {exc}"
+        return {
+            "ok": True,
+            "inspection": {
+                "workflow_id": workflow["id"],
+                "name": workflow["name"],
+                "version": workflow.get("version", "1.0.0"),
+                "description": workflow.get("description", ""),
+                "field_count": len(workflow.get("fields", [])),
+                "module_count": len(module_entries),
+                "has_modules": bool(module_entries),
+                "module_files": sorted(package_files),
+                "modules": module_entries,
+                "manifest_error": manifest_error,
+                "sha256": digest,
+                "exists": workflow["id"] in self.state.workflow_catalog.all_ids(),
+            },
+        }
+
+    def set_enabled(self, payload: dict[str, Any]) -> dict[str, Any]:
+        workflow_id = str(payload.get("workflow_id", "")).strip()
+        enabled = bool(payload.get("enabled"))
+        if not workflow_id:
+            raise ValueError("缺少 workflow_id")
+        with self.state.lock:
+            entry = self.state.workflow_catalog.set_enabled(workflow_id, enabled)
+        self.state.log("INFO", f"已{'启用' if enabled else '停用'}工作流：{entry['name']}。")
+        return {"ok": True, "workflow": entry, **self.state.workflow_catalog.manage_list()}
+
+    def uninstall(self, payload: dict[str, Any]) -> dict[str, Any]:
+        installation_id = str(payload.get("installation_id", "")).strip()
+        if not installation_id:
+            raise ValueError("缺少 installation_id")
+        with self.state.lock:
+            result = self.state.workflow_catalog.uninstall(installation_id)
+        self.state.log("INFO", f"已卸载工作流：{result['workflow_id']}。")
+        return {"ok": True, **result, **self.state.workflow_catalog.manage_list()}
+
+    def purge_data(self, payload: dict[str, Any]) -> dict[str, Any]:
+        workflow_id = str(payload.get("workflow_id", "")).strip()
+        if not workflow_id:
+            raise ValueError("缺少 workflow_id")
+        with self.state.lock:
+            purged = self._value_store().purge(workflow_id)
+        self.state.log("WARN", f"已清除工作流数据：{workflow_id}。")
+        return {"ok": True, "workflow_id": workflow_id, "purged": purged}
+
+    def delete_config(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Delete a config-type user workflow; data and module installs stay."""
+        workflow_id = str(payload.get("workflow_id", "")).strip()
+        if not workflow_id:
+            raise ValueError("缺少 workflow_id")
+        with self.state.lock:
+            self.state.workflow_catalog.delete(workflow_id)
+        self.state.log("INFO", f"已删除配置型工作流：{workflow_id}。")
+        return {"ok": True, **self.state.workflow_catalog.manage_list()}

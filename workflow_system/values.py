@@ -339,3 +339,11 @@ class WorkflowValueStore:
             raise ValueError("标签不存在")
         current.remove(tag)
         return self.write(workflow, payload["tags"])
+
+    def purge(self, workflow_id: str) -> bool:
+        """Delete the workbook of a workflow; returns whether a file existed."""
+        path = self.path_for(workflow_id)
+        if not path.exists():
+            return False
+        path.unlink()
+        return True

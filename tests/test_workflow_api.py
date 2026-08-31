@@ -12,6 +12,7 @@ from urllib.request import Request, urlopen
 
 import web_app
 from workflow_system.package import load_workflow_package
+from workflow_system.runtime import WorkflowModuleError
 
 
 class WorkflowApiTests(unittest.TestCase):
@@ -61,6 +62,21 @@ class WorkflowApiTests(unittest.TestCase):
         )
         with urlopen(request) as response:
             return json.loads(response.read().decode("utf-8"))
+
+    def post_json_tolerate(self, path: str, payload: dict) -> dict:
+        """POST and return the JSON body even when the server answers 4xx."""
+        from urllib.error import HTTPError
+        request = Request(
+            self.url + path,
+            data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(request) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            return json.loads(exc.read().decode("utf-8"))
 
     def test_sample_pack_profiles_round_trip_representative_names(self):
         cases = {
@@ -458,6 +474,201 @@ class WorkflowApiTests(unittest.TestCase):
             result = json.loads(response.read().decode("utf-8"))
         self.assertTrue(result["copied"])
         self.assertNotEqual(result["imported"]["id"], "sample-pack")
+
+    def import_package(self, package: bytes, filename: str,
+                       strategy: str = "copy", trust_modules: bool = True) -> dict:
+        boundary = "----WorkflowManageBoundary"
+        body = b"".join([
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"strategy\"\r\n\r\n{strategy}\r\n".encode(),
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"trust_modules\"\r\n\r\n{'true' if trust_modules else 'false'}\r\n".encode(),
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{filename}\"\r\nContent-Type: application/zip\r\n\r\n".encode(),
+            package,
+            f"\r\n--{boundary}--\r\n".encode(),
+        ])
+        request = Request(self.url + "/api/workflow/import", data=body, headers={
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+        }, method="POST")
+        with urlopen(request) as response:
+            return json.loads(response.read().decode("utf-8"))
+
+    def sample_pack_package(self) -> bytes:
+        with urlopen(self.url + "/api/workflow-export?workflow_id=sample-pack") as response:
+            return response.read()
+
+    def manage_list(self) -> list[dict]:
+        return self.post_json("/api/workflows/manage", {})["workflows"]
+
+    def manage_entry(self, workflow_id: str) -> dict:
+        return next(entry for entry in self.manage_list() if entry["workflow_id"] == workflow_id)
+
+    def test_workflow_manage_lists_sources_and_trust(self):
+        entries = self.manage_list()
+        by_id = {entry["workflow_id"]: entry for entry in entries}
+        self.assertIn("default", by_id)
+        self.assertIn("sample-pack", by_id)
+        self.assertIn("wallpaper-assets", by_id)
+        current = [entry for entry in entries if entry["current"]]
+        self.assertEqual(len(current), 1)
+        self.assertEqual(current[0]["workflow_id"], "default")
+        self.assertEqual(by_id["sample-pack"]["kind"], "resource")
+        self.assertTrue(by_id["sample-pack"]["enabled"])
+        self.assertEqual(by_id["sample-pack"]["trust"], "no-code")
+        self.assertEqual(by_id["sample-pack"]["capabilities"]["runners"], [])
+
+    def test_workflow_inspect_preflights_without_installing(self):
+        package = self.sample_pack_package()
+        boundary = "----InspectBoundary"
+        body = b"".join([
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"sample-pack.ffnf-workflow\"\r\nContent-Type: application/zip\r\n\r\n".encode(),
+            package,
+            f"\r\n--{boundary}--\r\n".encode(),
+        ])
+        request = Request(self.url + "/api/workflow/inspect", data=body, headers={
+            "Content-Type": f"multipart/form-data; boundary={boundary}",
+        }, method="POST")
+        with urlopen(request) as response:
+            result = json.loads(response.read().decode("utf-8"))
+        inspection = result["inspection"]
+        self.assertEqual(inspection["workflow_id"], "sample-pack")
+        self.assertEqual(inspection["name"], "采样包工作流")
+        self.assertTrue(inspection["has_modules"])
+        self.assertTrue(inspection["module_files"])
+        self.assertTrue(inspection["modules"])
+        self.assertEqual(len(inspection["sha256"]), 64)
+        self.assertTrue(inspection["exists"])
+        self.assertEqual(inspection["manifest_error"], "")
+
+        # A bare workflow.json has no code and no module files.
+        plain = Path("workflows/sample-pack/workflow.json").read_bytes()
+        plain_result = self.post_json("/api/workflow/inspect", {
+            "filename": "workflow.json", "workflow": json.loads(plain),
+        })
+        self.assertFalse(plain_result["inspection"]["has_modules"])
+        self.assertFalse(plain_result["inspection"]["module_files"])
+
+    def test_workflow_disable_stops_loading_module_code(self):
+        catalog = web_app.STATE.workflow_catalog
+        imported = self.import_package(self.sample_pack_package(), "sample-pack.ffnf-workflow")
+        workflow_id = imported["imported"]["id"]
+
+        def cleanup_installation():
+            record = next(
+                (record for record in catalog.installations.values()
+                 if record.get("workflow_id") == workflow_id), None)
+            if record:
+                catalog.uninstall(record["installation_id"])
+            else:
+                catalog.set_enabled(workflow_id, True)
+        self.addCleanup(cleanup_installation)
+        # Select away so the installed copy is not the current workflow.
+        self.post_json("/api/workflow/select", {"workflow_id": "default"})
+        entry = self.manage_entry(workflow_id)
+        self.assertEqual(entry["kind"], "module")
+        self.assertTrue(entry["enabled"])
+        self.assertEqual(entry["trust"], "trusted")
+        self.assertTrue(entry["capabilities"]["runners"])
+        # Module code is registered while enabled.
+        catalog.module_registry.module(workflow_id, "sample_pack")
+
+        result = self.post_json("/api/workflow/enable", {"workflow_id": workflow_id, "enabled": False})
+        self.assertTrue(result["ok"])
+        self.assertFalse(result["workflow"]["enabled"])
+        # Disabled workflows are no longer selectable or loadable; all_ids()
+        # still reports them so imports treat the id as occupied.
+        self.assertNotIn(workflow_id, {item["id"] for item in catalog.all()})
+        with self.assertRaises(KeyError):
+            catalog.get(workflow_id)
+        with self.assertRaises(WorkflowModuleError):
+            catalog.module_registry.module(workflow_id, "sample_pack")
+        self.assertIn(workflow_id, {entry["workflow_id"] for entry in result["workflows"]})
+
+        reenabled = self.post_json("/api/workflow/enable", {"workflow_id": workflow_id, "enabled": True})
+        self.assertTrue(reenabled["ok"])
+        self.assertTrue(reenabled["workflow"]["enabled"])
+        self.assertIn(workflow_id, {item["id"] for item in catalog.all()})
+        catalog.module_registry.module(workflow_id, "sample_pack")
+
+    def test_workflow_cannot_disable_current_workflow(self):
+        result = self.post_json_tolerate("/api/workflow/enable", {"workflow_id": "default", "enabled": False})
+        self.assertFalse(result["ok"])
+        self.assertIn("当前使用的工作流不能停用", result["error"])
+
+    def test_workflow_delete_config_keeps_install_state(self):
+        payload = {
+            "id": "config-delete-test",
+            "name": "配置删除测试",
+            "version": "1.0.0",
+            "fields": [{"id": "name", "label": "名称", "scope": "record", "kind": "text"}],
+            "template": [{"field": "name"}],
+        }
+        saved = self.post_json("/api/workflow/save", payload)
+        self.assertTrue(saved["ok"])
+        entry = self.manage_entry("config-delete-test")
+        self.assertEqual(entry["kind"], "config")
+        deleted = self.post_json("/api/workflow/delete-config", {"workflow_id": "config-delete-test"})
+        self.assertTrue(deleted["ok"])
+        self.assertNotIn("config-delete-test", {entry["workflow_id"] for entry in deleted["workflows"]})
+
+    def test_workflow_uninstall_isolates_then_allows_reinstall(self):
+        catalog = web_app.STATE.workflow_catalog
+        imported = self.import_package(self.sample_pack_package(), "sample-pack.ffnf-workflow")
+        workflow_id = imported["imported"]["id"]
+
+        def cleanup_installation():
+            record = next(
+                (record for record in catalog.installations.values()
+                 if record.get("workflow_id") == workflow_id), None)
+            if record:
+                catalog.set_enabled(workflow_id, True)
+                catalog.uninstall(record["installation_id"])
+        self.addCleanup(cleanup_installation)
+        self.post_json("/api/workflow/select", {"workflow_id": "default"})
+        entry = self.manage_entry(workflow_id)
+        installation_id = entry["installation_id"]
+        self.assertTrue(installation_id)
+        source_dir = Path(entry["source_dir"])
+        self.assertTrue(source_dir.is_dir())
+
+        trash_root = catalog.install_root / ".trash"
+        trash_before = {path.name for path in trash_root.iterdir()} if trash_root.is_dir() else set()
+        result = self.post_json("/api/workflow/uninstall", {"installation_id": installation_id})
+        self.assertTrue(result["ok"])
+        self.assertNotIn(workflow_id, catalog.all_ids())
+        self.assertNotIn(workflow_id, {entry["workflow_id"] for entry in result["workflows"]})
+        self.assertFalse(source_dir.exists())
+        self.assertTrue(trash_root.is_dir())
+        self.assertIn(workflow_id, result["trash_path"])
+        trash_after = {path.name for path in trash_root.iterdir()}
+        added = trash_after - trash_before
+        self.assertEqual(len(added), 1)
+        self.assertIn(workflow_id, next(iter(added)))
+        self.assertNotIn(installation_id, catalog.installations)
+
+        # Same-name reinstall works right after the isolation.
+        reinstalled = self.import_package(self.sample_pack_package(), "sample-pack.ffnf-workflow")
+        self.assertEqual(reinstalled["imported"]["id"], workflow_id)
+        self.assertTrue(Path(self.manage_entry(workflow_id)["source_dir"]).is_dir())
+        self.assertNotEqual(
+            self.manage_entry(workflow_id)["installation_id"], installation_id
+        )
+        # Clean up the second installation too.
+        self.post_json("/api/workflow/select", {"workflow_id": "default"})
+        second_id = self.manage_entry(workflow_id)["installation_id"]
+        self.post_json("/api/workflow/uninstall", {"installation_id": second_id})
+
+    def test_workflow_purge_data_deletes_only_the_workbook(self):
+        store = web_app.WORKFLOW_VALUE_STORE
+        path = store.path_for("purge-api-test")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"dummy workbook")
+        self.addCleanup(lambda: path.unlink(missing_ok=True))
+        result = self.post_json("/api/workflow/purge-data", {"workflow_id": "purge-api-test"})
+        self.assertTrue(result["ok"])
+        self.assertTrue(result["purged"])
+        self.assertFalse(path.exists())
+        second = self.post_json("/api/workflow/purge-data", {"workflow_id": "purge-api-test"})
+        self.assertTrue(second["ok"])
+        self.assertFalse(second["purged"])
 
 
 if __name__ == "__main__":
