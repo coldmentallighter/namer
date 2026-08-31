@@ -30,7 +30,7 @@ from server.controllers.system import SystemController
 from server.controllers.workflow_fields import WorkflowFieldController
 from server.application import WorkflowApplication
 from server.associations import AssociationService
-from server.history import (
+from core.history import (
     change_description as _history_change_description,
     changed_items as _changed_history_items,
     read_snapshot as _read_history_snapshot,
@@ -39,7 +39,7 @@ from server.presenter import StatePresenter
 from server.routes import create_handler
 from server.scanning import WorkflowScanService
 from server.state import StateManager
-from workflow_system.metadata import (
+from workflow_system.runtime import (
     apply_workflow_metadata as _apply_workflow_metadata,
     normalise_workflow_value as _normalise_workflow_value,
     parse_workflow_filename as _parse_workflow_filename,

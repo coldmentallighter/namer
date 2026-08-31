@@ -18,7 +18,7 @@ from core.rename import execute_rename, file_fingerprint
 from core.scan import build_stem_associations, directory_prefix_defaults, scan_folder
 from core.validate import preflight, validate_filename
 from core.xlsx import collect_directory_statistics, export_filename_tables, import_xlsx
-from workflow_system.metadata import parse_workflow_filename, read_workflow_metadata
+from workflow_system.runtime import parse_workflow_filename, read_workflow_metadata
 from workflow_system.catalog import discover_workflows
 from workflow_system.schema import CORE_FALLBACK_WORKFLOW, validate_workflow
 from workflow_system.runtime import WorkflowModuleRegistry
