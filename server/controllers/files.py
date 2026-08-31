@@ -7,7 +7,7 @@ from typing import Any
 
 from core.models import FileRecord
 from server.state import StateManager
-from workflow_system.catalog import workflow_field_map
+from workflow_system.schema import workflow_field_map
 
 
 class FileController:

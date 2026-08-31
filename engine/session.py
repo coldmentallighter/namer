@@ -10,7 +10,7 @@ from typing import Any
 from core.models import FileRecord, NamingGroup
 from core.naming import apply_filename_parse
 from core.scan import directory_prefix_defaults
-from workflow_system.catalog import workflow_field_map
+from workflow_system.schema import workflow_field_map
 from .executor import WorkflowEngine
 from .rules import path_value
 

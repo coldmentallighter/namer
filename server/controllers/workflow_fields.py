@@ -10,7 +10,7 @@ from core.naming import apply_filename_parse
 from engine import WorkflowEngine
 from engine.rules import action_map, action_value
 from server.state import StateManager
-from workflow_system.catalog import workflow_field_map
+from workflow_system.schema import workflow_field_map
 
 
 class WorkflowFieldController:

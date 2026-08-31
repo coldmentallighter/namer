@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 import web_app
-from workflow_system.catalog import load_workflow_package
+from workflow_system.package import load_workflow_package
 
 
 class WorkflowApiTests(unittest.TestCase):

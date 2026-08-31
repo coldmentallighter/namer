@@ -6,7 +6,8 @@ from collections.abc import Callable
 from typing import Any
 
 from server.state import StateManager
-from workflow_system.catalog import validate_workflow, workflow_summary
+from workflow_system.catalog import workflow_summary
+from workflow_system.schema import validate_workflow
 from workflow_system.values import WorkflowValueStore
 
 

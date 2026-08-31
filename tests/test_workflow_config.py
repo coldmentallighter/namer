@@ -7,15 +7,13 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from workflow_system.catalog import (
-    CORE_FALLBACK_WORKFLOW,
-    WorkflowCatalog,
-    discover_workflows,
+from workflow_system.catalog import WorkflowCatalog, discover_workflows
+from workflow_system.package import (
     load_workflow_bundle,
     load_workflow_package,
     package_workflow,
-    validate_workflow,
 )
+from workflow_system.schema import CORE_FALLBACK_WORKFLOW, validate_workflow
 
 
 class WorkflowConfigTests(unittest.TestCase):

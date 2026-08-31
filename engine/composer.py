@@ -10,7 +10,7 @@ from typing import Any
 
 from core.fsutil import normalise_ext
 from core.models import FileRecord, NamingGroup
-from workflow_system.catalog import workflow_field_map
+from workflow_system.schema import workflow_field_map
 from .rules import action_map, action_value, append_workflow_suffix, workflow_context
 
 
