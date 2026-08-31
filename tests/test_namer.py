@@ -30,13 +30,28 @@ from namer_core import (
     undo_last,
     validate_filename,
 )
-from workflow_modules.image_assets import read_image_dimensions
-from workflow_modules.sample_pack import append_bpm_suffix, detect_bpm
 from workflow_metadata import parse_workflow_filename, read_workflow_metadata
 from workflow_config import CORE_FALLBACK_WORKFLOW, discover_workflows, validate_workflow
+from workflow_runtime import WorkflowModuleRegistry
 
 
 INSTALLED_WORKFLOWS, _WORKFLOW_ERRORS = discover_workflows()
+WORKFLOW_MODULE_REGISTRY = WorkflowModuleRegistry()
+_WORKFLOW_MODULE_ERRORS = WORKFLOW_MODULE_REGISTRY.refresh(
+    {
+        workflow_id: workflow["_source_dir"]
+        for workflow_id, workflow in INSTALLED_WORKFLOWS.items()
+        if workflow.get("_source_dir")
+    },
+    INSTALLED_WORKFLOWS,
+)
+if _WORKFLOW_MODULE_ERRORS:
+    raise RuntimeError(f"测试工作流模块加载失败: {_WORKFLOW_MODULE_ERRORS}")
+SAMPLE_PACK_MODULE = WORKFLOW_MODULE_REGISTRY.module("sample-pack", "sample_pack")
+IMAGE_ASSETS_MODULE = WORKFLOW_MODULE_REGISTRY.module("wallpaper-assets", "image_assets")
+append_bpm_suffix = SAMPLE_PACK_MODULE.append_bpm_suffix
+detect_bpm = SAMPLE_PACK_MODULE.detect_bpm
+read_image_dimensions = IMAGE_ASSETS_MODULE.read_image_dimensions
 DEFAULT_TEST_WORKFLOW = INSTALLED_WORKFLOWS.get("default", CORE_FALLBACK_WORKFLOW)
 SAMPLE_PACK_WORKFLOW = INSTALLED_WORKFLOWS.get("sample-pack")
 IMAGE_METADATA_WORKFLOW = validate_workflow({
