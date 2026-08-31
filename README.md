@@ -65,9 +65,6 @@ workflow_system/
 server/         HTTP 层：state、routes、controllers（与 POST 路由 1:1）
 ```
 
-拆解原则：原 `core/files.py`、`workflow_system/catalog.py` 两个上帝模块已按职责拆开；
-`engine` 不再依赖 `workflow_system.catalog`，只依赖零 I/O 的 `schema`（R3 已解除）。
-纯搬移与重组，所有文件/类/函数签名不变，行为零变化。
 
 ## 构建可执行文件
 
