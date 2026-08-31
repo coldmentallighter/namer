@@ -265,9 +265,9 @@ class WorkflowApiTests(unittest.TestCase):
         self.assertEqual(statuses[".png"], "Skipped")
         self.assertEqual(statuses[".txt"], "Skipped")
 
-    def test_image_workflow_suggests_orientation_and_safe_aspect_ratio(self):
-        if "image-assets" not in web_app.STATE.workflow_catalog.all_ids():
-            self.skipTest("未安装工作流：image-assets")
+    def test_wallpaper_workflow_suggests_orientation_and_safe_aspect_ratio(self):
+        if "wallpaper-assets" not in web_app.STATE.workflow_catalog.all_ids():
+            self.skipTest("未安装工作流：wallpaper-assets")
         root = Path(self.temp.name) / "ImageRoot"
         root.mkdir()
         (root / "Wide.png").write_bytes(
@@ -276,28 +276,28 @@ class WorkflowApiTests(unittest.TestCase):
             + b"\x08\x02\x00\x00\x00"
         )
         scanned = self.post_json("/api/scan", {"root": str(root)})
-        selected = self.post_json("/api/workflow/select", {"workflow_id": "image-assets"})
+        selected = self.post_json("/api/workflow/select", {"workflow_id": "wallpaper-assets"})
         record = selected["state"]["records"][0]
         self.assertEqual(record["metadata"]["image"]["aspect_ratio"], "16:9")
         self.assertEqual(record["workflow_candidates"]["orientation"], ["横屏"])
         self.assertEqual(record["workflow_candidates"]["aspect_ratio"], ["16x9"])
-        self.assertEqual(record["workflow_candidate_details"]["orientation"][0]["rule_id"], "image-landscape")
-        self.assertEqual(record["workflow_derived"]["pixel_area"], 2073600.0)
+        self.assertEqual(record["workflow_candidate_details"]["orientation"][0]["rule_id"], "wallpaper-landscape")
+        self.assertEqual(record["workflow_derived"]["pixel_size"], "1920x1080")
+        self.assertEqual(record["workflow_values"]["orientation"], "横屏")
+        self.assertEqual(record["workflow_values"]["aspect_ratio"], "16x9")
+        self.assertEqual(record["workflow_values"]["dimensions"], "1920x1080")
 
         group_key = selected["state"]["current_group_key"]
         path = record["path"]
         state = self.post_json("/api/workflow-value", {
-            "group_key": group_key, "field": "orientation", "value": "横屏", "path": path,
-        })["state"]
-        state = self.post_json("/api/workflow-value", {
-            "group_key": group_key, "field": "aspect_ratio", "value": "16x9", "path": path,
+            "group_key": group_key, "field": "orientation", "value": "竖屏", "path": path,
         })["state"]
         final_record = state["records"][0]
-        self.assertIn("横屏_16x9_Wide.png", final_record["target_name"])
+        self.assertIn("竖屏_16x9_1920x1080_ImageRoot_", final_record["target_name"])
 
-    def test_image_workflow_snaps_complex_ratio_in_preview(self):
-        if "image-assets" not in web_app.STATE.workflow_catalog.all_ids():
-            self.skipTest("未安装工作流：image-assets")
+    def test_wallpaper_workflow_snaps_complex_ratio_in_preview(self):
+        if "wallpaper-assets" not in web_app.STATE.workflow_catalog.all_ids():
+            self.skipTest("未安装工作流：wallpaper-assets")
         root = Path(self.temp.name) / "ComplexImageRoot"
         root.mkdir()
         image = root / "UltraWide.png"
@@ -307,14 +307,16 @@ class WorkflowApiTests(unittest.TestCase):
             + b"\x08\x02\x00\x00\x00"
         )
         self.post_json("/api/scan", {"root": str(root)})
-        selected = self.post_json("/api/workflow/select", {"workflow_id": "image-assets"})
+        selected = self.post_json("/api/workflow/select", {"workflow_id": "wallpaper-assets"})
         record = selected["state"]["records"][0]
         self.assertEqual(record["metadata"]["image"]["aspect_ratio_exact"], "959x408")
         self.assertEqual(record["workflow_candidates"]["aspect_ratio"], ["21x9"])
+        self.assertEqual(record["workflow_values"]["aspect_ratio"], "21x9")
+        self.assertEqual(record["workflow_derived"]["pixel_size"], "7672x3264")
 
-    def test_workflow_fill_applies_all_image_candidates_in_one_request(self):
-        if "image-assets" not in web_app.STATE.workflow_catalog.all_ids():
-            self.skipTest("未安装工作流：image-assets")
+    def test_workflow_fill_applies_all_wallpaper_values_in_one_request(self):
+        if "wallpaper-assets" not in web_app.STATE.workflow_catalog.all_ids():
+            self.skipTest("未安装工作流：wallpaper-assets")
         root = Path(self.temp.name) / "ImageFillRoot"
         root.mkdir()
         (root / "Wide.png").write_bytes(
@@ -323,17 +325,23 @@ class WorkflowApiTests(unittest.TestCase):
             + b"\x08\x02\x00\x00\x00"
         )
         self.post_json("/api/scan", {"root": str(root)})
-        selected = self.post_json("/api/workflow/select", {"workflow_id": "image-assets"})
-        self.assertEqual(selected["state"]["records"][0]["workflow_values"]["orientation"], "")
-        self.assertEqual(selected["state"]["records"][0]["workflow_values"]["aspect_ratio"], "")
+        selected = self.post_json("/api/workflow/select", {"workflow_id": "wallpaper-assets"})
+        # wallpaper-assets assigns metadata-derived values during the switch,
+        # so unlike the old suggest-mode workflow they are already populated.
+        record = selected["state"]["records"][0]
+        self.assertEqual(record["workflow_values"]["orientation"], "横屏")
+        self.assertEqual(record["workflow_values"]["aspect_ratio"], "16x9")
+        self.assertEqual(record["workflow_values"]["dimensions"], "1920x1080")
 
         filled = self.post_json("/api/workflow-fill", {})
 
+        # Everything was already assigned: the one-request fill is a no-op
+        # that keeps the fully composed target stable.
         record = filled["state"]["records"][0]
-        self.assertEqual(filled["filled"], 2)
+        self.assertEqual(filled["filled"], 0)
         self.assertEqual(record["workflow_values"]["orientation"], "横屏")
         self.assertEqual(record["workflow_values"]["aspect_ratio"], "16x9")
-        self.assertEqual(record["target_name"], "横屏_16x9_Wide.png")
+        self.assertTrue(record["target_name"].startswith("横屏_16x9_1920x1080_ImageFillRoot_"))
 
     def test_wallpaper_conflicts_get_ordered_suffix_after_date(self):
         root = Path(self.temp.name) / "WallpaperConflictRoot"
