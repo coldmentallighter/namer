@@ -5,6 +5,7 @@
 
   const WORKFLOW_TAG_UPDATE_KEY = "offline-file-namer-workflow-tags-updated-v1";
   const FILE_TABLE_COLUMN_STORAGE_KEY = "offline-file-namer-file-table-column-widths-v1";
+  const FILE_TABLE_HEIGHT_STORAGE_KEY = "offline-file-namer-file-table-height-v1";
 
   const $ = (id) => document.getElementById(id);
   const state = { data: null, selectedExtensions: {}, exportExtensions: {}, exportAvailableExtensions: {}, rootDirty: false, scopeDirty: false, taskDirty: false };
@@ -583,6 +584,7 @@
     setupLogResizer();
     setupSidebarResizer();
     setupFileTableColumnResizers();
+    setupFileTableHeightResizer();
     applyTheme(localStorage.getItem("offline-file-namer-theme") || "light");
     $("themeToggle").addEventListener("click", () => {
       const theme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
@@ -993,6 +995,74 @@
       document.addEventListener("pointerup", stopResize);
       document.addEventListener("pointercancel", stopResize);
     } else {
+      document.addEventListener("mousemove", moveResize);
+      document.addEventListener("mouseup", stopResize);
+    }
+  }
+
+  function setupFileTableHeightResizer() {
+    const shell = $("fileTableShell");
+    const handle = $("fileTableHeightResizer");
+    const minimumHeight = 180;
+    const maximumHeight = () => Math.max(minimumHeight, Math.round(window.innerHeight * .8));
+    const defaultHeight = () => Math.max(260, Math.round(window.innerHeight - 680));
+    let currentHeight = Math.round(shell.getBoundingClientRect().height);
+    let activeResize = null;
+
+    const setHeight = (value, persist = true) => {
+      currentHeight = Math.max(minimumHeight, Math.min(maximumHeight(), Math.round(Number(value) || minimumHeight)));
+      document.documentElement.style.setProperty("--file-table-height", `${currentHeight}px`);
+      handle.setAttribute("aria-valuemin", String(minimumHeight));
+      handle.setAttribute("aria-valuemax", String(maximumHeight()));
+      handle.setAttribute("aria-valuenow", String(currentHeight));
+      handle.setAttribute("aria-valuetext", `${currentHeight} 像素`);
+      if (persist) localStorage.setItem(FILE_TABLE_HEIGHT_STORAGE_KEY, String(currentHeight));
+    };
+
+    const savedHeight = Number(localStorage.getItem(FILE_TABLE_HEIGHT_STORAGE_KEY));
+    setHeight(Number.isFinite(savedHeight) && savedHeight > 0 ? savedHeight : currentHeight, false);
+
+    handle.addEventListener("keydown", (event) => {
+      if (!["ArrowUp", "ArrowDown"].includes(event.key)) return;
+      event.preventDefault();
+      const step = event.shiftKey ? 50 : 20;
+      setHeight(currentHeight + (event.key === "ArrowDown" ? step : -step));
+    });
+    handle.addEventListener("dblclick", (event) => {
+      event.preventDefault();
+      setHeight(defaultHeight());
+    });
+
+    const beginResize = (event) => {
+      if (event.button !== undefined && event.button !== 0) return;
+      event.preventDefault();
+      activeResize = {
+        startY: event.clientY,
+        startHeight: shell.getBoundingClientRect().height,
+      };
+      handle.classList.add("resizing");
+      document.body.style.userSelect = "none";
+      if (event.pointerId !== undefined && handle.setPointerCapture) handle.setPointerCapture(event.pointerId);
+    };
+    const moveResize = (event) => {
+      if (!activeResize) return;
+      setHeight(activeResize.startHeight + event.clientY - activeResize.startY, false);
+    };
+    const stopResize = () => {
+      if (!activeResize) return;
+      handle.classList.remove("resizing");
+      document.body.style.userSelect = "";
+      activeResize = null;
+      localStorage.setItem(FILE_TABLE_HEIGHT_STORAGE_KEY, String(currentHeight));
+    };
+
+    if (window.PointerEvent) {
+      handle.addEventListener("pointerdown", beginResize);
+      document.addEventListener("pointermove", moveResize);
+      document.addEventListener("pointerup", stopResize);
+      document.addEventListener("pointercancel", stopResize);
+    } else {
+      handle.addEventListener("mousedown", beginResize);
       document.addEventListener("mousemove", moveResize);
       document.addEventListener("mouseup", stopResize);
     }

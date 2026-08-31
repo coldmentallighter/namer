@@ -147,7 +147,11 @@ button { cursor: pointer; }
 .table-toolbar select { width: 130px; }
 .toolbar-spacer { flex: 1; }
 .selected-metric { color: var(--muted); font-size: 11px; }
-.table-shell { max-height: max(260px, calc(100vh - 680px)); min-height: 260px; overflow: auto; border: 1px solid var(--line); border-radius: 7px; background: #fff; box-shadow: var(--shadow); }
+.table-shell { height: var(--file-table-height, max(260px, calc(100vh - 680px))); min-height: 180px; overflow: auto; border: 1px solid var(--line); border-radius: 7px; background: #fff; box-shadow: var(--shadow); }
+.table-height-resizer { position: relative; z-index: 3; height: 9px; cursor: row-resize; touch-action: none; outline: none; }
+.table-height-resizer::after { content: ""; position: absolute; top: 3px; left: 50%; width: 42px; height: 2px; border-radius: 2px; transform: translateX(-50%); background: var(--line); transition: background .12s, width .12s; }
+.table-height-resizer:hover::after, .table-height-resizer:focus-visible::after, .table-height-resizer.resizing::after { width: 58px; background: var(--accent); }
+.table-height-resizer + .audio-panel { margin-top: 2px; }
 .file-table { width: 100%; min-width: 1260px; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 11px; }
 .file-table th { position: sticky; top: 0; z-index: 2; box-sizing: border-box; background: #f1f6f3; color: #60706c; border-bottom: 1px solid var(--line); padding: 11px 9px; text-align: left; font-size: 10px; font-weight: 700; white-space: nowrap; }
 .file-table td { box-sizing: border-box; height: 50px; overflow: hidden; border-bottom: 1px solid #edf1ef; padding: 7px 9px; vertical-align: middle; color: #43524f; }

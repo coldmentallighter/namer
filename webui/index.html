@@ -126,7 +126,7 @@
             <span class="toolbar-spacer"></span><span id="selectedMetric" class="selected-metric">已选 0</span>
           </div>
 
-          <div class="table-shell">
+          <div class="table-shell" id="fileTableShell">
             <table class="file-table" id="fileTable">
               <colgroup>
                 <col data-column-id="selected" data-default-width="48">
@@ -145,6 +145,7 @@
               <tbody id="fileRows"><tr><td colspan="11" class="empty-row">选择根目录并扫描文件</td></tr></tbody>
             </table>
           </div>
+          <div class="table-height-resizer" id="fileTableHeightResizer" role="separator" aria-orientation="horizontal" aria-label="调整文件表格高度" tabindex="0" title="拖动调整表格高度；双击恢复默认高度"></div>
 
           <div class="audio-panel">
             <div class="audio-title"><div><strong id="audioName">未选择音频文件</strong><span id="audioMeta">音频预览</span></div></div>
