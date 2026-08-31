@@ -5,7 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from core.files import FileRecord, read_file_metadata
+from core.fsutil import read_file_metadata
+from core.models import FileRecord
 from .runtime import WorkflowModuleRegistry
 
 
@@ -74,7 +75,7 @@ def parse_workflow_filename(workflow: dict[str, Any], stem: str,
     """Use the parser declared by a workflow, or the generic core parser."""
     parser_id = str(workflow.get("filename_parser", "") or "").strip()
     if not parser_id:
-        from core.files import parse_filename
+        from core.naming import parse_filename
         return parse_filename(stem, template)
     parser = _runtime(registry).filename_parser(str(workflow.get("id", "")), parser_id)
     result = parser(stem, template, workflow)

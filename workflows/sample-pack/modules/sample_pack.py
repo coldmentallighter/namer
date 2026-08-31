@@ -286,11 +286,11 @@ def parse_filename(stem: str, template: str = "auto",
                    workflow: dict[str, Any] | None = None) -> dict[str, Any]:
     """Parse sample-pack naming tokens owned by this workflow.
 
-    The generic parser remains in ``core.files``. This adapter adds the
+    The generic parser remains in ``core.naming``. This adapter adds the
     sample-pack-only BPM/key patterns and removes those tokens before asking
     the generic parser to split the remaining name.
     """
-    from core.files import parse_filename as parse_generic_filename
+    from core.naming import parse_filename as parse_generic_filename
 
     if template and template.strip().casefold() not in {"auto", "自动"}:
         return parse_generic_filename(stem, template, _FILENAME_FIELD_PATTERNS)

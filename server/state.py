@@ -6,7 +6,7 @@ import threading
 from pathlib import Path
 from typing import Any, Iterable
 
-from core.files import LogEntry, NamingGroup
+from core.models import LogEntry, NamingGroup
 from workflow_system.catalog import WorkflowCatalog
 
 

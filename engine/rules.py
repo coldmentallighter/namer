@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from core.files import FileRecord
+from core.models import FileRecord
 
 
 def path_value(value: Any, path: str) -> Any:

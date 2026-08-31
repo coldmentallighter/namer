@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from core.files import natural_key
+from core.fsutil import natural_key
 
 
 def read_snapshot(history_path: str | Path) -> list[dict]:

@@ -7,10 +7,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from core.files import (
-    RenameOperation, append_history, collect_directory_statistics, execute_rename,
-    export_filename_tables, redo_last, scan_folder, undo_last,
-)
+from core.history import append_history, redo_last, undo_last
+from core.models import RenameOperation
+from core.rename import execute_rename
+from core.scan import scan_folder
+from core.xlsx import collect_directory_statistics, export_filename_tables
 from server.state import StateManager
 
 

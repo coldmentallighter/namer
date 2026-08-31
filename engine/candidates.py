@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from typing import Any
 
-from core.files import FileRecord, NamingGroup
+from core.models import FileRecord, NamingGroup
 
 
 def module_items(records: Iterable[FileRecord]) -> tuple[list[dict[str, Any]], dict[str, str]]:

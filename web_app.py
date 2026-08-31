@@ -12,11 +12,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from core.files import (
-    FileRecord,
-    NamingGroup,
-    validate_filename,
-)
+from core.models import FileRecord, NamingGroup
+from core.validate import validate_filename
 from workflow_system.catalog import RESOURCE_WORKFLOW_ROOT
 from workflow_system.values import WorkflowValueStore
 from engine.executor import WorkflowEngine

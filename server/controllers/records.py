@@ -6,7 +6,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from core.files import FileRecord, open_in_explorer
+from core.fsutil import open_in_explorer
+from core.models import FileRecord
 from server.state import StateManager
 from workflow_system.catalog import workflow_field_map
 

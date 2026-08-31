@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from core.files import FileRecord, NamingGroup
+from core.models import FileRecord, NamingGroup
 from engine import WorkflowEngine
 from engine.rules import condition_matches, expression_value, path_value
 

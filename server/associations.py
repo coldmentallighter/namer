@@ -6,7 +6,8 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from core.files import FileRecord, refresh_stem_associations
+from core.models import FileRecord
+from core.scan import refresh_stem_associations
 from server.state import StateManager
 
 

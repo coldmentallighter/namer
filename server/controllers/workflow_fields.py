@@ -5,7 +5,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from core.files import FileRecord, apply_filename_parse
+from core.models import FileRecord
+from core.naming import apply_filename_parse
 from engine import WorkflowEngine
 from engine.rules import action_map, action_value
 from server.state import StateManager

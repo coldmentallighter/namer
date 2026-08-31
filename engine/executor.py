@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable
 from typing import Any
 
-from core.files import FileRecord, NamingGroup
+from core.models import FileRecord, NamingGroup
 from .composer import compose_target, resolve_target_conflicts, workflow_profile, workflow_value
 from .candidates import apply_module_result, module_items
 from .rules import apply_rules, workflow_context

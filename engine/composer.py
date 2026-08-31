@@ -8,7 +8,8 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any
 
-from core.files import FileRecord, NamingGroup, normalise_ext
+from core.fsutil import normalise_ext
+from core.models import FileRecord, NamingGroup
 from workflow_system.catalog import workflow_field_map
 from .rules import action_map, action_value, append_workflow_suffix, workflow_context
 

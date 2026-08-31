@@ -10,26 +10,14 @@ from unittest.mock import patch
 
 from openpyxl import Workbook, load_workbook
 
-from core.files import (
-    NamingGroup,
-    assign_numeric,
-    build_stem_associations,
-    collect_directory_statistics,
-    compose_filename,
-    directory_prefix_defaults,
-    execute_rename,
-    export_filename_tables,
-    file_fingerprint,
-    import_xlsx,
-    read_file_metadata,
-    natural_key,
-    parse_filename,
-    preflight,
-    redo_last,
-    scan_folder,
-    undo_last,
-    validate_filename,
-)
+from core.fsutil import natural_key, read_file_metadata
+from core.history import redo_last, undo_last
+from core.models import NamingGroup
+from core.naming import assign_numeric, compose_filename, parse_filename
+from core.rename import execute_rename, file_fingerprint
+from core.scan import build_stem_associations, directory_prefix_defaults, scan_folder
+from core.validate import preflight, validate_filename
+from core.xlsx import collect_directory_statistics, export_filename_tables, import_xlsx
 from workflow_system.metadata import parse_workflow_filename, read_workflow_metadata
 from workflow_system.catalog import CORE_FALLBACK_WORKFLOW, discover_workflows, validate_workflow
 from workflow_system.runtime import WorkflowModuleRegistry
@@ -438,7 +426,7 @@ class NamerCoreTests(unittest.TestCase):
         self.assertTrue((self.root / "MIDI" / "Pattern1.mid").exists())
 
     def test_transaction_rolls_back_when_commit_fails(self):
-        from core import files as namer_core
+        from core import rename as namer_rename
         root = self.root / "MIDI"
         second = root / "Pattern2.mid"
         second.write_bytes(b"MThd2")
@@ -446,7 +434,7 @@ class NamerCoreTests(unittest.TestCase):
         group = next(group for group in result.groups.values() if group.extension == ".mid")
         for index, record in enumerate(group.records, start=1):
             record.target_name = f"Txn_{index}.mid"
-        original_rename = namer_core.os.rename
+        original_rename = namer_rename.os.rename
         calls = {"count": 0}
         def fail_commit(source, target):
             calls["count"] += 1
@@ -454,7 +442,7 @@ class NamerCoreTests(unittest.TestCase):
                 raise OSError("simulated commit failure")
             return original_rename(source, target)
         operation = None
-        with patch.object(namer_core.os, "rename", side_effect=fail_commit):
+        with patch.object(namer_rename.os, "rename", side_effect=fail_commit):
             operation = execute_rename(group.records, self.root / "history.json")
         self.assertEqual(operation.transaction_status, "rolled_back")
         self.assertTrue((root / "Pattern1.mid").exists())

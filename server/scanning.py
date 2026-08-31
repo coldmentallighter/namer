@@ -5,14 +5,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from core.files import (
-    FileRecord,
-    NamingGroup,
-    directory_prefix_defaults,
-    natural_key,
-    refresh_stem_associations,
-    scan_folder,
-)
+from core.fsutil import natural_key
+from core.models import FileRecord, NamingGroup
+from core.scan import directory_prefix_defaults, refresh_stem_associations, scan_folder
 from server.state import StateManager
 
 

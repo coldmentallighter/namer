@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import asdict
 from typing import Any
 
-from core.files import FileRecord
+from core.models import FileRecord
 from server.state import StateManager
 
 

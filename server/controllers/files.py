@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from core.files import FileRecord
+from core.models import FileRecord
 from server.state import StateManager
 from workflow_system.catalog import workflow_field_map
 
