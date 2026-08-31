@@ -40,19 +40,9 @@ INSTALLED_WORKFLOWS, _WORKFLOW_ERRORS = discover_workflows()
 DEFAULT_TEST_WORKFLOW = INSTALLED_WORKFLOWS.get("default", CORE_FALLBACK_WORKFLOW)
 SAMPLE_PACK_WORKFLOW = INSTALLED_WORKFLOWS.get("sample-pack")
 IMAGE_METADATA_WORKFLOW = validate_workflow({
-    "id": "image-metadata-test",
-    "name": "Image metadata test",
-    "fields": [{"id": "name", "label": "Name", "scope": "record", "kind": "text"}],
-    "template": [{"field": "name"}],
-    "metadata_providers": [{"provider": "image_dimensions"}],
+    **INSTALLED_WORKFLOWS["wallpaper-assets"],
 })
-SAMPLE_METADATA_WORKFLOW = validate_workflow({
-    "id": "sample-metadata-test",
-    "name": "Sample metadata test",
-    "fields": [{"id": "name", "label": "Name", "scope": "record", "kind": "text"}],
-    "template": [{"field": "name"}],
-    "metadata_providers": [{"provider": "sample_pack"}],
-})
+SAMPLE_METADATA_WORKFLOW = validate_workflow({**INSTALLED_WORKFLOWS["sample-pack"]})
 
 
 class NamerCoreTests(unittest.TestCase):

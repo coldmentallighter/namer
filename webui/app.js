@@ -107,7 +107,7 @@
   function updateActionAvailability() {
     const disabled = !state.data?.groups?.length || !scannedRootIsCurrent();
     ["previewButton", "fillWorkflowButton", "renameGroupButton", "renameAllButton", "importExcel", "applyMappingButton", "parsePreviewButton"].forEach((id) => { $(id).disabled = disabled; });
-    document.querySelectorAll("[data-workflow-action]").forEach((button) => { button.disabled = disabled; });
+    document.querySelectorAll("[data-workflow-action], [data-workflow-module]").forEach((button) => { button.disabled = disabled; });
   }
 
   function requireCurrentScan() {
@@ -243,7 +243,10 @@
     const groupMarkup = group ? groupFields.map((field) => renderField(field, String(groupValues[field.id] ?? field.default ?? ""), "group", groupCandidates[field.id] || [])).join("") : "";
     panel.innerHTML = workflowMarkup + groupMarkup;
     const actions = workflow.actions || [];
-    $("workflowActions").innerHTML = actions.map((action) => `<button class="button button-quiet" data-workflow-action="${esc(action.id)}" title="${esc(action.description || action.label)}"><span class="icon">↗</span>${esc(action.label)}</button>`).join("");
+    const modules = (workflow.modules || []).filter((module) => module.trigger === "on_user_request");
+    const actionMarkup = actions.map((action) => `<button class="button button-quiet" data-workflow-action="${esc(action.id)}" title="${esc(action.description || action.label)}"><span class="icon">↗</span>${esc(action.label)}</button>`).join("");
+    const moduleMarkup = modules.map((module) => `<button class="button button-quiet" data-workflow-module="${esc(module.id)}" title="${esc(module.description || module.label)}"><span class="icon">↗</span>${esc(module.label)}</button>`).join("");
+    $("workflowActions").innerHTML = actionMarkup + moduleMarkup;
   }
 
   function renderMappingControls() {
@@ -474,9 +477,13 @@
   async function importWorkflow(file) {
     if (!file) return;
     try {
+      const packageFile = file.name.toLowerCase().endsWith(".ffnf-workflow");
+      const trustModules = packageFile && window.confirm("工作流包可能包含会在本机执行的 Python 模块。仅在确认来源可信时继续安装。");
+      if (packageFile && !trustModules) return;
       const form = new FormData();
       form.append("file", file);
       form.append("strategy", "copy");
+      form.append("trust_modules", trustModules ? "true" : "false");
       const payload = await api("/api/workflow/import", { method: "POST", body: form });
       state.taskDirty = true;
       applyState(payload.state);
@@ -641,6 +648,17 @@
       } catch (error) { showToast(error.message, true); }
     });
     $("workflowActions").addEventListener("click", async (event) => {
+      const moduleButton = event.target.closest("[data-workflow-module]");
+      if (moduleButton) {
+        try {
+          if (!await flushRecordUpdates() || !requireCurrentScan()) return;
+          const payload = await api("/api/workflow-module/run", jsonOptions({ module_id: moduleButton.dataset.workflowModule }));
+          state.taskDirty = true;
+          applyState(payload.state);
+          showToast(`已分析 ${payload.processed} 个文件，新增 ${payload.candidates_added} 个候选标签`);
+        } catch (error) { showToast(error.message, true); }
+        return;
+      }
       const button = event.target.closest("[data-workflow-action]");
       if (!button) return;
       try {

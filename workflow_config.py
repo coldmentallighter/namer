@@ -12,9 +12,13 @@ import io
 import json
 import os
 import re
+import shutil
+import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any
+
+from workflow_runtime import MODULE_MANIFEST_FILE_NAME, WorkflowModuleRegistry
 
 
 WORKFLOW_SCHEMA_VERSION = 1
@@ -34,6 +38,7 @@ _ACTION_ID = re.compile(r"^[a-z][a-z0-9_-]{0,63}$")
 _ACTION_KINDS = {"append_field_suffix"}
 _CONTEXT_ROOTS = {"metadata", "record", "derived"}
 _INITIAL_SOURCES = {"", "stem", "directory.meta", "directory.group", "directory.child"}
+_MODULE_TRIGGERS = {"on_user_request", "after_scan"}
 
 
 RESOURCE_WORKFLOW_ROOT = Path(__file__).with_name("workflows")
@@ -237,6 +242,75 @@ def _normalise_metadata_providers(providers: Any) -> list[dict[str, Any]]:
             raise ValueError(f"工作流 metadata provider options 必须是对象: {provider_id}")
         result.append({"provider": provider_id, "options": copy.deepcopy(options)})
         provider_ids.add(provider_id)
+    return result
+
+
+def _normalise_workflow_modules(modules: Any, fields: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    if modules is None:
+        return []
+    if not isinstance(modules, list):
+        raise ValueError("工作流 modules 必须是数组")
+    result: list[dict[str, Any]] = []
+    module_ids: set[str] = set()
+    for index, raw_module in enumerate(modules):
+        if not isinstance(raw_module, dict):
+            raise ValueError(f"工作流 module 必须是对象: {index}")
+        module_id = str(raw_module.get("id", "")).strip()
+        if not _ACTION_ID.fullmatch(module_id) or module_id in module_ids:
+            raise ValueError(f"工作流 module id 无效或重复: {module_id}")
+        trigger = str(raw_module.get("trigger", "on_user_request")).strip().casefold()
+        if trigger not in _MODULE_TRIGGERS:
+            raise ValueError(f"工作流 module trigger 无效: {module_id}.{trigger}")
+        outputs = raw_module.get("outputs", [])
+        if not isinstance(outputs, list) or not outputs:
+            raise ValueError(f"工作流 module outputs 必须是非空数组: {module_id}")
+        normalised_outputs: list[dict[str, str]] = []
+        output_ids: set[str] = set()
+        for output_index, raw_output in enumerate(outputs):
+            if not isinstance(raw_output, dict):
+                raise ValueError(f"工作流 module output 必须是对象: {module_id}[{output_index}]")
+            output_id = str(raw_output.get("id", "")).strip()
+            if not _FIELD_ID.fullmatch(output_id) or output_id in output_ids:
+                raise ValueError(f"工作流 module output id 无效或重复: {module_id}.{output_id}")
+            field_id = str(raw_output.get("field", "")).strip()
+            definition = fields.get(field_id)
+            if definition is None:
+                raise ValueError(f"工作流 module output 引用了不存在的字段: {field_id}")
+            if not definition.get("editable", True):
+                raise ValueError(f"工作流 module output 不能绑定不可编辑字段: {field_id}")
+            field_scope = str(definition.get("scope", "record"))
+            expected_scope = "record" if field_scope in {"record", "suffix"} else field_scope
+            scope = str(raw_output.get("scope", expected_scope)).strip().casefold()
+            if scope != expected_scope:
+                raise ValueError(
+                    f"工作流 module output scope 与字段不一致: {module_id}.{output_id}"
+                )
+            mode = str(raw_output.get("mode", "suggest")).strip().casefold()
+            if mode != "suggest":
+                raise ValueError(f"工作流 module output 当前只支持 suggest: {module_id}.{output_id}")
+            output_format = str(raw_output.get("format", "raw")).strip().casefold()
+            if output_format != "raw":
+                raise ValueError(f"工作流 module output 当前只支持 raw: {module_id}.{output_id}")
+            normalised_outputs.append({
+                "id": output_id,
+                "field": field_id,
+                "scope": scope,
+                "mode": mode,
+                "format": output_format,
+            })
+            output_ids.add(output_id)
+        options = raw_module.get("options", {})
+        if not isinstance(options, dict):
+            raise ValueError(f"工作流 module options 必须是对象: {module_id}")
+        result.append({
+            "id": module_id,
+            "label": str(raw_module.get("label", module_id)),
+            "description": str(raw_module.get("description", "") or ""),
+            "trigger": trigger,
+            "outputs": normalised_outputs,
+            "options": copy.deepcopy(options),
+        })
+        module_ids.add(module_id)
     return result
 
 
@@ -480,6 +554,7 @@ def validate_workflow(value: dict[str, Any], *, allow_builtin: bool = True) -> d
         raise ValueError("工作流 grouping.filter 只能是 all 或 image")
     result["grouping"] = {"mode": grouping_mode, "filter": grouping_filter}
     result["metadata_providers"] = _normalise_metadata_providers(result.get("metadata_providers", []))
+    result["modules"] = _normalise_workflow_modules(result.get("modules", []), workflow_field_map(result))
     result["actions"] = _normalise_actions(result.get("actions", []), field_ids, workflow_field_map(result))
     result["derived"] = _normalise_derived(result.get("derived", []))
     result["rules"] = _normalise_rules(result.get("rules", []), field_ids, workflow_field_map(result))
@@ -582,6 +657,7 @@ CORE_FALLBACK_WORKFLOW = validate_workflow({
     ],
     "template": [{"field": "name"}],
     "metadata_providers": [],
+    "modules": [],
     "actions": [],
     "suffix_modes": {},
     "suffix_options": [],
@@ -590,7 +666,7 @@ CORE_FALLBACK_WORKFLOW = validate_workflow({
 
 
 def workflow_root_signature(root: str | Path = RESOURCE_WORKFLOW_ROOT) -> tuple[tuple[str, int, int], ...]:
-    """Return a cheap manifest fingerprint for runtime plug-in monitoring."""
+    """Return a cheap workflow and module fingerprint for plug-in monitoring."""
     root = Path(root)
     try:
         root_stat = root.stat()
@@ -599,12 +675,20 @@ def workflow_root_signature(root: str | Path = RESOURCE_WORKFLOW_ROOT) -> tuple[
     except OSError:
         return ((".", -1, -1),)
     for folder in folders:
-        manifest = folder / WORKFLOW_FILE_NAME
-        try:
-            stat = manifest.stat()
-            signature.append((folder.name, stat.st_mtime_ns, stat.st_size))
-        except OSError:
-            signature.append((folder.name, -1, -1))
+        watched = [folder / WORKFLOW_FILE_NAME, folder / MODULE_MANIFEST_FILE_NAME]
+        modules_dir = folder / "modules"
+        if modules_dir.is_dir():
+            watched.extend(
+                path for path in modules_dir.rglob("*")
+                if path.is_file() and "__pycache__" not in path.parts and path.suffix.casefold() != ".pyc"
+            )
+        for path in watched:
+            relative = path.relative_to(root).as_posix()
+            try:
+                stat = path.stat()
+                signature.append((relative, stat.st_mtime_ns, stat.st_size))
+            except OSError:
+                signature.append((relative, -1, -1))
     return tuple(signature)
 
 
@@ -640,6 +724,7 @@ def discover_workflows(root: str | Path = RESOURCE_WORKFLOW_ROOT) -> tuple[dict[
             workflow_id = workflow["id"]
             if workflow_id in workflows:
                 raise ValueError(f"工作流 id 重复: {workflow_id}")
+            workflow["_source_dir"] = str(folder.resolve())
             workflows[workflow_id] = workflow
         except (OSError, UnicodeDecodeError, json.JSONDecodeError, TypeError, ValueError) as exc:
             errors.append({
@@ -659,11 +744,17 @@ def workflow_summary(workflow: dict[str, Any]) -> dict[str, Any]:
         "builtin": bool(workflow.get("builtin", False)),
         "kind": workflow.get("kind", "custom"),
         "field_count": len(workflow.get("fields", [])),
+        "module_count": len(workflow.get("modules", [])),
     }
 
 
 def package_workflow(workflow: dict[str, Any]) -> bytes:
+    source_dir_text = str(workflow.get("_source_dir", "") or "")
     workflow = validate_workflow(workflow)
+    workflow = {
+        key: value for key, value in workflow.items()
+        if not str(key).startswith("_")
+    }
     manifest = {
         "schema_version": WORKFLOW_SCHEMA_VERSION,
         "type": "ffnf-workflow",
@@ -671,6 +762,7 @@ def package_workflow(workflow: dict[str, Any]) -> bytes:
         "name": workflow["name"],
         "version": workflow.get("version", "1.0.0"),
         "software": "OfflineFileNamer",
+        "has_modules": bool(source_dir_text and (Path(source_dir_text) / MODULE_MANIFEST_FILE_NAME).is_file()),
     }
     vocabularies = {
         field["id"]: field.get("quick_tags", [])
@@ -685,22 +777,50 @@ def package_workflow(workflow: dict[str, Any]) -> bytes:
         archive.writestr("vocabularies.json", json.dumps(vocabularies, ensure_ascii=False, indent=2))
         archive.writestr("examples.json", json.dumps(examples, ensure_ascii=False, indent=2))
         archive.writestr("README.md", f"# {workflow['name']}\n\n{workflow.get('description', '')}\n")
+        if source_dir_text:
+            source_dir = Path(source_dir_text)
+            module_manifest = source_dir / MODULE_MANIFEST_FILE_NAME
+            if module_manifest.is_file():
+                archive.write(module_manifest, MODULE_MANIFEST_FILE_NAME)
+                modules_dir = source_dir / "modules"
+                if modules_dir.is_dir():
+                    for path in sorted(modules_dir.rglob("*")):
+                        if (not path.is_file() or "__pycache__" in path.parts
+                                or path.suffix.casefold() == ".pyc"):
+                            continue
+                        archive.write(path, path.relative_to(source_dir).as_posix())
     return buffer.getvalue()
 
 
-def load_workflow_package(data: bytes, filename: str = "workflow.json") -> dict[str, Any]:
+def load_workflow_bundle(data: bytes, filename: str = "workflow.json") -> tuple[dict[str, Any], dict[str, bytes]]:
+    package_files: dict[str, bytes] = {}
     if filename.casefold().endswith(WORKFLOW_PACKAGE_EXTENSION):
         try:
             with zipfile.ZipFile(io.BytesIO(data)) as archive:
-                names = set(archive.namelist())
+                archive_items = archive.infolist()
+                if len(archive_items) > 512 or sum(item.file_size for item in archive_items) > 64 * 1024 * 1024:
+                    raise ValueError("工作流包文件数量或解压后大小超出限制")
+                raw_names = archive.namelist()
+                normalised_names = [name.replace("\\", "/") for name in raw_names]
+                if len(normalised_names) != len(set(normalised_names)):
+                    raise ValueError("工作流包包含重复路径")
+                names = set(raw_names)
                 if WORKFLOW_FILE_NAME not in names:
                     raise ValueError("工作流包缺少 workflow.json")
-                for name in names:
-                    if name.startswith("/") or ".." in name.split("/"):
+                for raw_name in raw_names:
+                    name = raw_name.replace("\\", "/")
+                    parts = name.split("/")
+                    if ("\x00" in name or name.startswith("/") or ".." in parts or ":" in parts[0]
+                            or any(not part for part in parts[:-1])):
                         raise ValueError("工作流包包含不安全路径")
                 workflow = json.loads(archive.read(WORKFLOW_FILE_NAME).decode("utf-8"))
                 vocabularies = json.loads(archive.read("vocabularies.json").decode("utf-8")) if "vocabularies.json" in names else {}
                 examples = json.loads(archive.read("examples.json").decode("utf-8")) if "examples.json" in names else []
+                for name in raw_names:
+                    normalised_name = name.replace("\\", "/")
+                    if (normalised_name == MODULE_MANIFEST_FILE_NAME
+                            or normalised_name.startswith("modules/")) and not normalised_name.endswith("/"):
+                        package_files[normalised_name] = archive.read(name)
         except (zipfile.BadZipFile, KeyError, UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise ValueError(f"工作流包无效: {exc}") from exc
         if isinstance(vocabularies, dict):
@@ -718,8 +838,17 @@ def load_workflow_package(data: bytes, filename: str = "workflow.json") -> dict[
         workflow = workflow["workflow"]
     if not isinstance(workflow, dict):
         raise ValueError("工作流内容必须是 JSON 对象")
+    workflow = {
+        key: value for key, value in workflow.items()
+        if not str(key).startswith("_")
+    }
     workflow["builtin"] = False
-    return validate_workflow(workflow, allow_builtin=False)
+    return validate_workflow(workflow, allow_builtin=False), package_files
+
+
+def load_workflow_package(data: bytes, filename: str = "workflow.json") -> dict[str, Any]:
+    workflow, _package_files = load_workflow_bundle(data, filename)
+    return workflow
 
 
 def copy_workflow(workflow: dict[str, Any], existing_ids: set[str]) -> dict[str, Any]:
@@ -736,13 +865,24 @@ def copy_workflow(workflow: dict[str, Any], existing_ids: set[str]) -> dict[str,
     return validate_workflow(result, allow_builtin=False)
 
 
+def _public_workflow(workflow: dict[str, Any]) -> dict[str, Any]:
+    return copy.deepcopy({
+        key: value for key, value in workflow.items()
+        if not str(key).startswith("_")
+    })
+
+
 class WorkflowCatalog:
     """Monitor installed workflow plug-ins and persist user-owned workflows."""
 
     def __init__(self, config_path: str | Path,
-                 workflow_root: str | Path | list[str | Path] | tuple[str | Path, ...] = RESOURCE_WORKFLOW_ROOT) -> None:
+                 workflow_root: str | Path | list[str | Path] | tuple[str | Path, ...] = RESOURCE_WORKFLOW_ROOT,
+                 install_root: str | Path | None = None) -> None:
         self.path = Path(config_path)
         raw_roots = [workflow_root] if isinstance(workflow_root, (str, Path)) else list(workflow_root)
+        self.install_root = Path(install_root) if install_root is not None else self.path.parent / "installed-workflows"
+        self.install_root.mkdir(parents=True, exist_ok=True)
+        raw_roots.append(self.install_root)
         roots: list[Path] = []
         seen_roots: set[str] = set()
         for item in raw_roots:
@@ -759,6 +899,7 @@ class WorkflowCatalog:
         self.user_workflows: dict[str, dict[str, Any]] = {}
         self.load_errors: list[dict[str, str]] = []
         self.config_errors: list[dict[str, str]] = []
+        self.module_registry = WorkflowModuleRegistry()
         self.revision = 0
         self._root_signature: tuple[tuple[str, tuple[tuple[str, int, int], ...]], ...] | None = None
         self.refresh(force=True)
@@ -793,6 +934,7 @@ class WorkflowCatalog:
                 "current_changed": False,
                 "revision": self.revision,
             }
+        previous_signature = self._root_signature
         previous = self.builtin_workflows
         previous_errors = self.load_errors
         previous_current = self.current_workflow
@@ -810,13 +952,26 @@ class WorkflowCatalog:
                     })
                     continue
                 discovered[workflow_id] = workflow
+        source_dirs = {
+            workflow_id: workflow.get("_source_dir", "")
+            for workflow_id, workflow in discovered.items()
+            if workflow.get("_source_dir")
+        }
+        module_errors = self.module_registry.refresh(source_dirs, discovered)
+        errors.extend(module_errors)
+        invalid_module_workflows = {
+            item.get("workflow_id", "") for item in module_errors
+        }
+        for workflow_id in invalid_module_workflows:
+            discovered.pop(workflow_id, None)
         previous_ids = set(previous)
         discovered_ids = set(discovered)
         added = sorted(discovered_ids - previous_ids)
         removed = sorted(previous_ids - discovered_ids)
+        roots_changed = previous_signature is not None and previous_signature != signature
         updated = sorted(
             workflow_id for workflow_id in previous_ids & discovered_ids
-            if previous[workflow_id] != discovered[workflow_id]
+            if previous[workflow_id] != discovered[workflow_id] or roots_changed
         )
         changed = bool(added or removed or updated or previous_errors != errors)
         self.builtin_workflows = discovered
@@ -873,8 +1028,8 @@ class WorkflowCatalog:
 
     def all(self) -> list[dict[str, Any]]:
         self.refresh()
-        workflows = [copy.deepcopy(workflow) for workflow in self.builtin_workflows.values()] + [
-            copy.deepcopy(workflow) for workflow in self.user_workflows.values()
+        workflows = [_public_workflow(workflow) for workflow in self.builtin_workflows.values()] + [
+            _public_workflow(workflow) for workflow in self.user_workflows.values()
         ]
         return workflows or [copy.deepcopy(CORE_FALLBACK_WORKFLOW)]
 
@@ -886,7 +1041,7 @@ class WorkflowCatalog:
             workflow = CORE_FALLBACK_WORKFLOW
         if workflow is None:
             raise KeyError(f"工作流不存在: {wanted}")
-        return copy.deepcopy(workflow)
+        return _public_workflow(workflow)
 
     def diagnostics(self) -> list[dict[str, str]]:
         self.refresh()
@@ -924,6 +1079,7 @@ class WorkflowCatalog:
         # copy is always user-owned and editable.
         workflow["builtin"] = False
         workflow = validate_workflow(workflow, allow_builtin=False)
+        workflow = _public_workflow(workflow)
         existing = workflow["id"] in self.all_ids()
         if existing and strategy == "cancel":
             raise ValueError("已取消导入")
@@ -939,6 +1095,7 @@ class WorkflowCatalog:
         workflow = copy.deepcopy(workflow)
         workflow["builtin"] = False
         workflow = validate_workflow(workflow, allow_builtin=False)
+        workflow = _public_workflow(workflow)
         if self.is_builtin(workflow["id"]):
             raise ValueError("内置工作流不可直接覆盖，请先导入为副本")
         self.user_workflows[workflow["id"]] = workflow
@@ -958,3 +1115,90 @@ class WorkflowCatalog:
             self.current_workflow = self._resolve_current(None)
         self.revision += 1
         self.save()
+
+    def package(self, workflow_id: str) -> bytes:
+        self.refresh()
+        workflow = self.builtin_workflows.get(workflow_id) or self.user_workflows.get(workflow_id)
+        if workflow is None:
+            raise KeyError(f"工作流不存在: {workflow_id}")
+        return package_workflow(workflow)
+
+    def install_package(self, workflow: dict[str, Any], package_files: dict[str, bytes],
+                        strategy: str = "copy", *, trust_modules: bool = False) -> tuple[dict[str, Any], bool]:
+        """Install a module-bearing package as one dynamically loaded directory."""
+        if MODULE_MANIFEST_FILE_NAME not in package_files:
+            return self.upsert_import(workflow, strategy)
+        if not trust_modules:
+            raise ValueError("工作流包包含 Python 模块；必须明确确认信任后才能安装")
+        self.refresh()
+        workflow = copy.deepcopy(workflow)
+        workflow["builtin"] = False
+        workflow = validate_workflow(workflow, allow_builtin=False)
+        existing = workflow["id"] in self.all_ids()
+        if existing and strategy == "cancel":
+            raise ValueError("已取消导入")
+        if existing and strategy != "replace":
+            workflow = copy_workflow(workflow, self.all_ids())
+        elif existing:
+            existing_workflow = self.builtin_workflows.get(workflow["id"])
+            existing_source = Path(str(existing_workflow.get("_source_dir", ""))).resolve() if existing_workflow else None
+            if existing_source is not None and existing_source.parent != self.install_root.resolve():
+                raise ValueError("内置工作流不可由外部模块包直接覆盖，请导入为副本")
+        replace_user_workflow = bool(existing and strategy == "replace" and workflow["id"] in self.user_workflows)
+
+        self.install_root.mkdir(parents=True, exist_ok=True)
+        target = (self.install_root / workflow["id"]).resolve()
+        if target.parent != self.install_root.resolve():
+            raise ValueError("工作流安装路径无效")
+        temporary = Path(tempfile.mkdtemp(prefix=".workflow-install-", dir=self.install_root))
+        backup = temporary.with_name(temporary.name + ".backup")
+        try:
+            public_workflow = {
+                key: value for key, value in workflow.items()
+                if not str(key).startswith("_")
+            }
+            (temporary / WORKFLOW_FILE_NAME).write_text(
+                json.dumps(public_workflow, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            for relative_name, data in package_files.items():
+                parts = Path(relative_name.replace("\\", "/")).parts
+                if (relative_name != MODULE_MANIFEST_FILE_NAME
+                        and (not parts or parts[0] != "modules")):
+                    continue
+                destination = (temporary / Path(*parts)).resolve()
+                if not destination.is_relative_to(temporary.resolve()):
+                    raise ValueError("工作流包包含不安全模块路径")
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(data)
+            probe = WorkflowModuleRegistry()
+            probe_errors = probe.refresh({workflow["id"]: temporary}, {workflow["id"]: workflow})
+            if probe_errors:
+                raise ValueError(probe_errors[0]["error"])
+            if target.exists():
+                os.replace(target, backup)
+            try:
+                os.replace(temporary, target)
+            except Exception:
+                if backup.exists() and not target.exists():
+                    os.replace(backup, target)
+                raise
+        except Exception:
+            if temporary.exists():
+                shutil.rmtree(temporary)
+            raise
+        self.current_workflow = workflow["id"]
+        self.refresh(force=True)
+        if workflow["id"] not in self.builtin_workflows:
+            if target.exists():
+                shutil.rmtree(target)
+            if backup.exists():
+                os.replace(backup, target)
+            self.refresh(force=True)
+            raise ValueError(f"工作流模块安装后未能加载: {workflow['id']}")
+        if backup.exists():
+            shutil.rmtree(backup)
+        if replace_user_workflow:
+            self.user_workflows.pop(workflow["id"], None)
+        self.current_workflow = workflow["id"]
+        self.save()
+        return self.get(workflow["id"]), existing

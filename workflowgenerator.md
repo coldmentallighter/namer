@@ -52,6 +52,7 @@
   "excel_field": "name",
   "metadata_providers": [],
   "filename_parser": "",
+  "modules": [],
   "actions": [],
   "fields": [],
   "derived": [],
@@ -107,6 +108,59 @@
 ```
 
 没有声明 `filename_parser` 时，只使用通用的名称、类型和编号解析；核心不会自动推断 BPM、调式或某种文件格式的专用字段。不要在 workflow JSON 中嵌入 Python、JavaScript 或任意可执行代码。
+
+### 工作流自带模块
+
+只有用户明确需要文件识别、模型调用或其他声明式规则无法完成的能力时，才生成模块工作流。完整目录结构为：
+
+```text
+workflows/<workflow-id>/
+├─ workflow.json
+├─ module-manifest.json
+└─ modules/
+   └─ analysis.py
+```
+
+`module-manifest.json` 将 capability ID 映射到入口文件中的函数名。ID 只在当前工作流内有效：
+
+```json
+{
+  "schema_version": 1,
+  "modules": [{
+    "id": "analysis",
+    "entrypoint": "modules/analysis.py",
+    "providers": {"private_metadata": "read_metadata"},
+    "normalizers": {},
+    "filename_parsers": {},
+    "runner": "run"
+  }]
+}
+```
+
+需要用户或扫描触发 runner 时，在 `workflow.json` 中把输出槽绑定到已有字段：
+
+```json
+"modules": [{
+  "id": "analysis",
+  "label": "分析标签",
+  "trigger": "on_user_request",
+  "outputs": [{
+    "id": "style_tag",
+    "scope": "record",
+    "field": "style",
+    "mode": "suggest",
+    "format": "raw"
+  }]
+}]
+```
+
+`trigger` 只能是 `on_user_request` 或 `after_scan`。runner 接收 `items`，每项包含主程序生成的临时 `id`、文件路径、名称、扩展名和已读取 metadata；返回值只能是以下结构，且所有 value 必须是字符串：
+
+```json
+{"items": [{"id": "item-000001", "values": {"style_tag": "A_B_C_QS_"}}]}
+```
+
+模块不能返回目标路径、任意字段 ID 或直接赋值指令。未知 item、未声明输出槽、非字符串和过长字符串会被拒绝；空字符串表示没有建议。有效结果只进入候选值，用户确认后才写入命名字段。模块代码目前只适合受信任的本地工作流，未知来源代码必须等待隔离运行器，不要诱导用户跳过信任确认。
 
 工作流可用 `resource_filter` 声明默认处理边界。它不会从扫描结果中删除其他文件，只控制扩展名初始启用状态：
 
@@ -264,5 +318,10 @@ action 未执行时不会改变目标名称；执行后会记录在文件级 wor
 - `workflow.json`
 - `vocabularies.json`
 - `examples.json`
+
+模块工作流还必须包含：
+
+- `module-manifest.json`
+- `modules/` 中清单引用的入口文件及其相对依赖
 
 包中的 `workflow.json` 仍必须通过同一套 schema 校验。安装型工作流放在 `workflows/<唯一目录>/workflow.json`，程序会动态发现任意数量的目录插件；目录名不需要写入代码清单。工作流 ID 必须唯一，无效或冲突的插件会被隔离，不能覆盖其他已安装工作流。

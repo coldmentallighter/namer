@@ -15,6 +15,18 @@
   },
   "metadata_providers": [{"provider": "sample_pack"}],
   "filename_parser": "sample_pack",
+  "modules": [
+    {
+      "id": "sample_pack",
+      "label": "分析 BPM 标签",
+      "description": "调用采样包模块并将分析结果写入待确认候选值。",
+      "trigger": "on_user_request",
+      "outputs": [
+        {"id": "bpm_tag", "scope": "record", "field": "bpm", "mode": "suggest", "format": "raw"},
+        {"id": "tempo_tag", "scope": "record", "field": "qualifier", "mode": "suggest", "format": "raw"}
+      ]
+    }
+  ],
   "resource_filter": {"include": ["audio", "midi"], "on_mismatch": "skip"},
   "actions": [],
   "fields": [

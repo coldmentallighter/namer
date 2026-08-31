@@ -1,42 +1,36 @@
-"""Dispatch workflow-declared metadata providers outside the naming core."""
+"""Dispatch workflow-declared metadata capabilities outside the naming core."""
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 from namer_core import FileRecord, read_file_metadata
-from workflow_modules import image_assets, sample_pack, wallpaper
+from workflow_runtime import WorkflowModuleRegistry
 
 
-MetadataReader = Callable[[str | Path, str | Path | None, dict[str, Any] | None], dict[str, Any]]
-ValueNormalizer = Callable[[Any], Any]
-FilenameParser = Callable[..., dict[str, Any]]
+_DEFAULT_REGISTRY: WorkflowModuleRegistry | None = None
 
 
-def _read_image_metadata(path, root, _options=None):
-    return image_assets.read_metadata(path, root)
+def _default_registry() -> WorkflowModuleRegistry:
+    global _DEFAULT_REGISTRY
+    if _DEFAULT_REGISTRY is None:
+        from workflow_config import RESOURCE_WORKFLOW_ROOT, discover_workflows
+
+        workflows, _errors = discover_workflows(RESOURCE_WORKFLOW_ROOT)
+        workflow_dirs = {
+            workflow_id: workflow.get("_source_dir", "")
+            for workflow_id, workflow in workflows.items()
+            if workflow.get("_source_dir")
+        }
+        registry = WorkflowModuleRegistry()
+        registry.refresh(workflow_dirs, workflows)
+        _DEFAULT_REGISTRY = registry
+    return _DEFAULT_REGISTRY
 
 
-def _read_sample_pack_metadata(path, root, _options=None):
-    return sample_pack.read_metadata(path, root)
-
-
-PROVIDERS: dict[str, MetadataReader] = {
-    "image_dimensions": _read_image_metadata,
-    "sample_pack": _read_sample_pack_metadata,
-}
-
-NORMALIZERS: dict[str, ValueNormalizer] = {
-    "sample_pack_scale": sample_pack.normalise_scale,
-    "sample_pack_bpm": sample_pack.normalise_bpm,
-}
-
-FILENAME_PARSERS: dict[str, FilenameParser] = {
-    "sample_pack": sample_pack.parse_filename,
-    "wallpaper": wallpaper.parse_filename,
-}
+def _runtime(registry: WorkflowModuleRegistry | None) -> WorkflowModuleRegistry:
+    return registry if registry is not None else _default_registry()
 
 
 def _merge(left: dict[str, Any], right: dict[str, Any]) -> None:
@@ -48,41 +42,51 @@ def _merge(left: dict[str, Any], right: dict[str, Any]) -> None:
 
 
 def read_workflow_metadata(workflow: dict[str, Any], path: str | Path,
-                           root: str | Path | None = None) -> dict[str, Any]:
+                           root: str | Path | None = None,
+                           registry: WorkflowModuleRegistry | None = None) -> dict[str, Any]:
     metadata = read_file_metadata(path, root)
+    runtime = _runtime(registry)
+    workflow_id = str(workflow.get("id", ""))
     for declaration in workflow.get("metadata_providers", []):
         provider_id = str(declaration.get("provider", ""))
-        reader = PROVIDERS.get(provider_id)
-        if reader is None:
-            continue
-        _merge(metadata, reader(path, root, declaration.get("options", {})))
+        reader = runtime.provider(workflow_id, provider_id)
+        values = reader(path, root, declaration.get("options", {}))
+        if not isinstance(values, dict):
+            raise ValueError(f"metadata provider 必须返回对象: {workflow_id}.{provider_id}")
+        _merge(metadata, values)
     return metadata
 
 
-def normalise_workflow_value(workflow: dict[str, Any], field_id: str, value: Any) -> str:
+def normalise_workflow_value(workflow: dict[str, Any], field_id: str, value: Any,
+                             registry: WorkflowModuleRegistry | None = None) -> str:
     definition = next((field for field in workflow.get("fields", [])
                        if field.get("id") == field_id), {})
-    normalizer = NORMALIZERS.get(str(definition.get("normalizer", "")))
-    result = normalizer(value) if normalizer else value
-    return str(result or "")
+    normalizer_id = str(definition.get("normalizer", "") or "")
+    if normalizer_id:
+        normalizer = _runtime(registry).normalizer(str(workflow.get("id", "")), normalizer_id)
+        value = normalizer(value)
+    return str(value or "")
 
 
 def parse_workflow_filename(workflow: dict[str, Any], stem: str,
-                            template: str = "auto") -> dict[str, Any]:
+                            template: str = "auto",
+                            registry: WorkflowModuleRegistry | None = None) -> dict[str, Any]:
     """Use the parser declared by a workflow, or the generic core parser."""
     parser_id = str(workflow.get("filename_parser", "") or "").strip()
-    parser = FILENAME_PARSERS.get(parser_id)
-    if parser is None:
+    if not parser_id:
         from namer_core import parse_filename
         return parse_filename(stem, template)
-    if parser_id == "sample_pack":
-        return parser(stem, template, workflow)
-    return parser(stem, template)
+    parser = _runtime(registry).filename_parser(str(workflow.get("id", "")), parser_id)
+    result = parser(stem, template, workflow)
+    if not isinstance(result, dict):
+        raise ValueError(f"filename parser 必须返回对象: {workflow.get('id')}.{parser_id}")
+    return result
 
 
-def apply_workflow_metadata(records: list[FileRecord], workflow: dict[str, Any]) -> None:
+def apply_workflow_metadata(records: list[FileRecord], workflow: dict[str, Any],
+                            registry: WorkflowModuleRegistry | None = None) -> None:
     for record in records:
         try:
-            record.metadata = read_workflow_metadata(workflow, record.path, record.root)
+            record.metadata = read_workflow_metadata(workflow, record.path, record.root, registry)
         except OSError as exc:
             record.metadata = {"file": {"error": str(exc)}}

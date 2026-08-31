@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import shutil
 import struct
 import tempfile
 import threading
@@ -21,6 +22,10 @@ class WorkflowApiTests(unittest.TestCase):
         (cls.root / "Drums").mkdir(parents=True)
         for name in ("One.wav", "Two.wav", "Three.wav", "Four.wav", "Five.wav"):
             (cls.root / "Drums" / name).write_bytes(b"RIFF")
+        install_root = web_app.STATE.workflow_catalog.install_root
+        cls.initial_installed_workflow_dirs = {
+            path.name for path in install_root.iterdir() if path.is_dir()
+        } if install_root.is_dir() else set()
         cls.server, cls.url = web_app.run_server(0, False)
         cls.thread = threading.Thread(target=cls.server.serve_forever, daemon=True)
         cls.thread.start()
@@ -36,6 +41,12 @@ class WorkflowApiTests(unittest.TestCase):
         web_app.STATE.workflow_catalog.current_workflow = "default"
         web_app.STATE.workflow_id = "default"
         web_app.STATE.workflow_catalog.save()
+        install_root = web_app.STATE.workflow_catalog.install_root
+        if install_root.is_dir():
+            for path in install_root.iterdir():
+                if path.is_dir() and path.name not in cls.initial_installed_workflow_dirs:
+                    shutil.rmtree(path)
+        web_app.STATE.workflow_catalog.refresh(force=True)
         config_path = web_app.STATE.workflow_catalog.path
         if config_path.exists():
             config_path.unlink()
@@ -109,6 +120,32 @@ class WorkflowApiTests(unittest.TestCase):
         self.assertEqual(metadata["bpm"], "130")
         self.assertEqual(metadata["bpm_metadata"], "120")
         self.assertIn("冲突", metadata["bpm_warning"])
+
+    def test_workflow_module_returns_strings_as_confirmable_candidates(self):
+        root = Path(self.temp.name) / "ModuleCandidateRoot"
+        root.mkdir()
+        source = root / "Loop_123BPM.wav"
+        source.write_bytes(b"RIFF")
+        self.post_json("/api/workflow/select", {"workflow_id": "sample-pack"})
+        scanned = self.post_json("/api/scan", {"root": str(root)})["state"]
+        self.assertNotIn("qualifier", scanned["records"][0]["workflow_candidates"])
+        self.assertEqual(scanned["records"][0]["workflow_values"]["qualifier"], "")
+
+        analyzed = self.post_json("/api/workflow-module/run", {"module_id": "sample_pack"})
+
+        result_item = analyzed["result"]["items"][0]
+        self.assertTrue(result_item["id"].startswith("item-"))
+        self.assertEqual(result_item["values"]["tempo_tag"], "Tempo_123")
+        record = analyzed["state"]["records"][0]
+        self.assertEqual(record["workflow_candidates"]["qualifier"], ["Tempo_123"])
+        self.assertEqual(record["workflow_values"]["qualifier"], "")
+        self.assertEqual(
+            record["workflow_candidate_details"]["qualifier"][0]["module_id"],
+            "sample_pack",
+        )
+
+        filled = self.post_json("/api/workflow-fill", {})["state"]["records"][0]
+        self.assertEqual(filled["workflow_values"]["qualifier"], "Tempo_123")
 
     def test_sample_pack_identity_values_are_shared_across_folders(self):
         root = Path(self.temp.name) / "MultiFolderSampleRoot"
@@ -401,6 +438,7 @@ class WorkflowApiTests(unittest.TestCase):
         boundary = "----WorkflowBoundary"
         body = b"".join([
             f"--{boundary}\r\nContent-Disposition: form-data; name=\"strategy\"\r\n\r\ncopy\r\n".encode(),
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"trust_modules\"\r\n\r\ntrue\r\n".encode(),
             f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"sample-pack.ffnf-workflow\"\r\nContent-Type: application/zip\r\n\r\n".encode(),
             package,
             f"\r\n--{boundary}--\r\n".encode(),

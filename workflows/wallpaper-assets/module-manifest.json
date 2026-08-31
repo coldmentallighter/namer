@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "modules": [
+    {
+      "id": "image_assets",
+      "entrypoint": "modules/image_assets.py",
+      "providers": {
+        "image_dimensions": "read_metadata"
+      }
+    },
+    {
+      "id": "wallpaper",
+      "entrypoint": "modules/wallpaper.py",
+      "filename_parsers": {
+        "wallpaper": "parse_filename"
+      }
+    }
+  ]
+}

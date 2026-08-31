@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import io
 import json
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 
 from workflow_config import (
     CORE_FALLBACK_WORKFLOW,
     WorkflowCatalog,
     discover_workflows,
+    load_workflow_bundle,
     load_workflow_package,
     package_workflow,
     validate_workflow,
@@ -42,6 +45,25 @@ class WorkflowConfigTests(unittest.TestCase):
             self.assertEqual(restored["id"], workflow["id"])
             self.assertEqual(restored["template"], workflow["template"])
             self.assertTrue(restored["fields"])
+            with zipfile.ZipFile(io.BytesIO(packaged)) as archive:
+                names = set(archive.namelist())
+            self.assertFalse(any("__pycache__" in Path(name).parts or name.endswith(".pyc") for name in names))
+            if workflow["id"] == "sample-pack":
+                self.assertIn("module-manifest.json", names)
+                self.assertIn("modules/sample_pack.py", names)
+            if workflow["id"] == "wallpaper-assets":
+                self.assertIn("modules/image_assets.py", names)
+                self.assertIn("modules/wallpaper.py", names)
+
+    def test_module_package_requires_explicit_trust(self):
+        workflow = self.installed_workflow("sample-pack")
+        restored, package_files = load_workflow_bundle(
+            package_workflow(workflow), "sample-pack.ffnf-workflow"
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            catalog = WorkflowCatalog(Path(temp_dir) / "config.json")
+            with self.assertRaisesRegex(ValueError, "确认信任"):
+                catalog.install_package(restored, package_files, "copy")
 
     def test_catalog_persists_preferences_and_copies_conflicts(self):
         sample_pack_workflow = self.installed_workflow("sample-pack")
@@ -95,6 +117,23 @@ class WorkflowConfigTests(unittest.TestCase):
         normalized = validate_workflow(workflow)
         self.assertEqual(normalized["rules"][0]["when"]["op"], "gt")
         self.assertEqual(normalized["rules"][0]["then"][0]["mode"], "suggest")
+
+    def test_validation_binds_module_output_slot_to_field_scope(self):
+        workflow = {
+            "id": "module-output",
+            "name": "Module output",
+            "fields": [{"id": "tag", "label": "Tag", "scope": "record", "kind": "text"}],
+            "modules": [{
+                "id": "analysis",
+                "trigger": "on_user_request",
+                "outputs": [{"id": "tag_value", "field": "tag", "scope": "record"}],
+            }],
+        }
+        normalized = validate_workflow(workflow)
+        self.assertEqual(normalized["modules"][0]["outputs"][0]["field"], "tag")
+        workflow["modules"][0]["outputs"][0]["scope"] = "group"
+        with self.assertRaisesRegex(ValueError, "scope"):
+            validate_workflow(workflow)
 
     def test_wallpaper_workflow_exposes_source_quick_tags(self):
         workflow = self.installed_workflow("wallpaper-assets")

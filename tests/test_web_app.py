@@ -62,6 +62,10 @@ class WebApiTests(unittest.TestCase):
             styles = response.read().decode("utf-8")
         self.assertIn(".column-resizer", styles)
         self.assertIn("table-layout: fixed", styles)
+        self.assertIn(".file-name { width: 100%", styles)
+        self.assertIn(".folder-cell { width: 100%", styles)
+        self.assertIn(".parse-cell { width: 100%", styles)
+        self.assertNotIn(".preview-cell { color: #244e43 !important; max-width", styles)
         with urlopen(self.url + "/tag-manager") as response:
             manager_html = response.read().decode("utf-8")
         self.assertIn("快捷标签管理", manager_html)

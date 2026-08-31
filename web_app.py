@@ -51,18 +51,17 @@ from namer_core import (
 from workflow_config import (
     RESOURCE_WORKFLOW_ROOT,
     WorkflowCatalog,
-    load_workflow_package,
-    package_workflow,
+    load_workflow_bundle,
     validate_workflow,
     workflow_field_map,
     workflow_summary,
 )
 from workflow_values import WorkflowValueStore
 from workflow_metadata import (
-    apply_workflow_metadata,
-    normalise_workflow_value,
-    parse_workflow_filename,
-    read_workflow_metadata,
+    apply_workflow_metadata as _apply_workflow_metadata,
+    normalise_workflow_value as _normalise_workflow_value,
+    parse_workflow_filename as _parse_workflow_filename,
+    read_workflow_metadata as _read_workflow_metadata,
 )
 
 
@@ -141,6 +140,30 @@ class AppState:
 
 
 STATE = AppState()
+
+
+def read_workflow_metadata(workflow: dict[str, Any], path: str | Path,
+                           root: str | Path | None = None) -> dict[str, Any]:
+    return _read_workflow_metadata(
+        workflow, path, root, STATE.workflow_catalog.module_registry
+    )
+
+
+def normalise_workflow_value(workflow: dict[str, Any], field_id: str, value: Any) -> str:
+    return _normalise_workflow_value(
+        workflow, field_id, value, STATE.workflow_catalog.module_registry
+    )
+
+
+def parse_workflow_filename(workflow: dict[str, Any], stem: str,
+                            template: str = "auto") -> dict[str, Any]:
+    return _parse_workflow_filename(
+        workflow, stem, template, STATE.workflow_catalog.module_registry
+    )
+
+
+def apply_workflow_metadata(records: list[FileRecord], workflow: dict[str, Any]) -> None:
+    _apply_workflow_metadata(records, workflow, STATE.workflow_catalog.module_registry)
 
 
 def _apply_stored_tags(workflow: dict) -> dict:
@@ -1503,6 +1526,87 @@ def _all_records() -> list[FileRecord]:
     return [record for group in STATE.groups.values() for record in group.records]
 
 
+def _workflow_module_items(records: list[FileRecord]) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    items: list[dict[str, Any]] = []
+    paths_by_item_id: dict[str, str] = {}
+    for index, record in enumerate(records, start=1):
+        item_id = f"item-{index:06d}"
+        paths_by_item_id[item_id] = record.path
+        items.append({
+            "id": item_id,
+            "path": record.path,
+            "name": record.original_name,
+            "relative_folder": record.relative_folder,
+            "extension": record.extension,
+            "metadata": record.metadata,
+        })
+    return items, paths_by_item_id
+
+
+def _apply_workflow_module_result(workflow: dict[str, Any], module_id: str,
+                                  result: dict[str, Any], paths_by_item_id: dict[str, str]) -> int:
+    """Adapt validated module strings into the workflow candidate stores."""
+    current_records = {record.path: record for record in _all_records()}
+    records_by_item_id = {
+        item_id: current_records[path]
+        for item_id, path in paths_by_item_id.items()
+        if path in current_records
+    }
+    missing_items = {
+        item["id"] for item in result["items"] if item["id"] not in records_by_item_id
+    }
+    if missing_items:
+        raise ValueError("模块执行期间文件任务已发生变化，请重新运行")
+    declaration = next(item for item in workflow.get("modules", []) if item["id"] == module_id)
+    outputs = {output["id"]: output for output in declaration["outputs"]}
+    added = 0
+    for item_result in result["items"]:
+        record = records_by_item_id[item_result["id"]]
+        group = STATE.groups.get(record.group_key)
+        for slot_id, raw_value in item_result["values"].items():
+            if not raw_value.strip():
+                continue
+            output = outputs[slot_id]
+            field_id = output["field"]
+            value = normalise_workflow_value(workflow, field_id, raw_value)
+            if not value.strip():
+                continue
+            scope = output["scope"]
+            if scope == "workflow":
+                candidates = STATE.workflow_candidates.setdefault(field_id, [])
+            elif scope == "group":
+                if group is None:
+                    continue
+                candidates = group.workflow_candidates.setdefault(field_id, [])
+            else:
+                candidates = record.workflow_candidates.setdefault(field_id, [])
+            if value in candidates:
+                continue
+            candidates.append(value)
+            added += 1
+            if scope == "record":
+                record.workflow_candidate_details.setdefault(field_id, []).append({
+                    "value": value,
+                    "rule_id": f"module:{module_id}:{slot_id}",
+                    "reason": declaration.get("description") or f"模块建议：{declaration.get('label', module_id)}",
+                    "mode": "suggest",
+                    "module_id": module_id,
+                    "slot_id": slot_id,
+                })
+    return added
+
+
+def _run_workflow_module_candidates(workflow: dict[str, Any], module_id: str,
+                                    trigger: str, records: list[FileRecord]) -> tuple[dict[str, Any], int]:
+    """Run one module and adapt validated string outputs into candidates."""
+    items, paths_by_item_id = _workflow_module_items(records)
+    result, _request = STATE.workflow_catalog.module_registry.run(
+        workflow, module_id, trigger, items
+    )
+    added = _apply_workflow_module_result(workflow, module_id, result, paths_by_item_id)
+    return result, added
+
+
 def _expand_associated_records(records: list[FileRecord],
                                allowed_group_keys: set[str] | None = None) -> list[FileRecord]:
     """Synchronize target stems and include eligible cross-format siblings."""
@@ -1688,7 +1792,7 @@ class Handler(BaseHTTPRequestHandler):
             workflow_id = query.get("id", query.get("workflow_id", [STATE.workflow_id]))[0]
             workflow = STATE.workflow_catalog.get(workflow_id)
             filename = f"{workflow['id']}.ffnf-workflow"
-            _send_attachment(self, package_workflow(workflow), filename, "application/zip")
+            _send_attachment(self, STATE.workflow_catalog.package(workflow_id), filename, "application/zip")
         elif parsed.path == "/audio":
             query = parse_qs(parsed.query)
             path = _safe_audio_path(query.get("path", [""])[0])
@@ -1770,6 +1874,8 @@ class Handler(BaseHTTPRequestHandler):
                 self._run_workflow_action()
             elif path in {"/api/workflow-fill", "/api/workflow/auto-fill"}:
                 self._workflow_fill_candidates()
+            elif path in {"/api/workflow-module/run", "/api/workflow/module/run"}:
+                self._run_workflow_module()
             elif path == "/api/record":
                 _apply_record_update(_json_body(self))
                 _send_json(self, {"ok": True, "state": _state_json()})
@@ -1879,6 +1985,7 @@ class Handler(BaseHTTPRequestHandler):
     def _import_workflow(self) -> None:
         content_type = self.headers.get("Content-Type", "")
         strategy = "copy"
+        trust_modules = False
         if "multipart/form-data" in content_type:
             form = _multipart_body(self)
             upload = form.get("file")
@@ -1886,17 +1993,21 @@ class Handler(BaseHTTPRequestHandler):
                 raise ValueError("未选择工作流文件")
             filename, data = upload
             strategy = str(form.get("strategy", "copy") or "copy")
+            trust_modules = str(form.get("trust_modules", "false")).strip().casefold() == "true"
         else:
             payload = _json_body(self)
             filename = str(payload.get("filename", "workflow.json"))
             source = payload.get("workflow", payload)
             data = json.dumps(source, ensure_ascii=False).encode("utf-8")
             strategy = str(payload.get("strategy", "copy") or "copy")
+            trust_modules = bool(payload.get("trust_modules", False))
         if strategy not in {"copy", "replace", "cancel"}:
             raise ValueError("导入策略必须是 copy、replace 或 cancel")
-        workflow = load_workflow_package(data, filename)
+        workflow, package_files = load_workflow_bundle(data, filename)
         with STATE.lock:
-            imported, existed = STATE.workflow_catalog.upsert_import(workflow, strategy)
+            imported, existed = STATE.workflow_catalog.install_package(
+                workflow, package_files, strategy, trust_modules=trust_modules
+            )
             _activate_workflow(imported["id"], persist=False)
             STATE.log("INFO", f"已导入工作流：{imported['name']}。")
         _send_json(self, {
@@ -2041,6 +2152,60 @@ class Handler(BaseHTTPRequestHandler):
             STATE.log("INFO", f"已填充工作流自动值：{filled} 个字段。")
         _send_json(self, {"ok": True, "filled": filled, "fields": sorted(filled_fields), "state": _state_json()})
 
+    def _run_workflow_module(self) -> None:
+        payload = _json_body(self)
+        module_id = str(payload.get("module_id", payload.get("id", ""))).strip()
+        if not module_id:
+            raise ValueError("请选择要调用的工作流模块")
+        requested_paths = payload.get("paths")
+        if requested_paths is not None and not isinstance(requested_paths, list):
+            raise ValueError("paths 必须是数组")
+        path_filter = {
+            str(path) for path in (requested_paths or []) if str(path).strip()
+        }
+        selected_only = bool(payload.get("selected_only", True))
+        with STATE.lock:
+            workflow = _active_workflow()
+            declaration = next(
+                (item for item in workflow.get("modules", []) if item.get("id") == module_id),
+                None,
+            )
+            if declaration is None:
+                raise KeyError(f"当前工作流未声明模块: {module_id}")
+            if declaration.get("trigger") != "on_user_request":
+                raise ValueError(f"模块不能由用户请求触发: {module_id}")
+            records = [
+                record for record in _all_records()
+                if not record.removed
+                and (not selected_only or record.selected)
+                and (not path_filter or record.path in path_filter)
+            ]
+            if not records:
+                raise ValueError("没有可交给模块处理的文件")
+            items, paths_by_item_id = _workflow_module_items(records)
+            workflow_id = STATE.workflow_id
+        result, _request = STATE.workflow_catalog.module_registry.run(
+            workflow, module_id, "on_user_request", items
+        )
+        with STATE.lock:
+            if STATE.workflow_id != workflow_id:
+                raise ValueError("模块执行期间工作流已切换，结果未应用")
+            added = _apply_workflow_module_result(
+                workflow, module_id, result, paths_by_item_id
+            )
+            STATE.log(
+                "INFO",
+                f"模块 {declaration.get('label', module_id)} 已处理 {len(records)} 个文件，新增 {added} 个候选标签。",
+            )
+        _send_json(self, {
+            "ok": True,
+            "module_id": module_id,
+            "processed": len(records),
+            "candidates_added": added,
+            "result": result,
+            "state": _state_json(),
+        })
+
     def _scan(self) -> None:
         payload = _json_body(self)
         root = str(payload.get("root", "")).strip()
@@ -2076,6 +2241,17 @@ class Handler(BaseHTTPRequestHandler):
             _initialise_workflow_values()
             for group in STATE.groups.values():
                 _prepare_group(group)
+            for module in active_workflow.get("modules", []):
+                if module.get("trigger") != "after_scan":
+                    continue
+                try:
+                    _result, added = _run_workflow_module_candidates(
+                        active_workflow, module["id"], "after_scan",
+                        [record for record in _all_records() if record.selected and not record.removed],
+                    )
+                    STATE.log("INFO", f"扫描后模块 {module.get('label', module['id'])} 新增 {added} 个候选标签。")
+                except Exception as exc:
+                    STATE.log("ERROR", f"扫描后模块 {module.get('label', module['id'])} 执行失败：{exc}")
             STATE.log("INFO", f"扫描完成：{len(result.records)} 个文件，{len(result.groups)} 个命名组，{len(result.extension_counts)} 种扩展名。")
             if result.skipped:
                 STATE.log("INFO", f"已忽略 {len(result.skipped)} 个生成的表格或不可读条目。")

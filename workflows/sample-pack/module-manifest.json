@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "modules": [
+    {
+      "id": "sample_pack",
+      "entrypoint": "modules/sample_pack.py",
+      "providers": {
+        "sample_pack": "read_metadata"
+      },
+      "normalizers": {
+        "sample_pack_bpm": "normalise_bpm",
+        "sample_pack_scale": "normalise_scale"
+      },
+      "filename_parsers": {
+        "sample_pack": "parse_filename"
+      },
+      "runner": "run"
+    }
+  ]
+}
