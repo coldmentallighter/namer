@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 from openpyxl import Workbook
 
 import web_app
-from workflow_values import WorkflowValueStore
+from workflow_system.values import WorkflowValueStore
 
 
 class WebApiTests(unittest.TestCase):

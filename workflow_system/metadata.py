@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from namer_core import FileRecord, read_file_metadata
-from workflow_runtime import WorkflowModuleRegistry
+from core.files import FileRecord, read_file_metadata
+from .runtime import WorkflowModuleRegistry
 
 
 _DEFAULT_REGISTRY: WorkflowModuleRegistry | None = None
@@ -15,7 +15,7 @@ _DEFAULT_REGISTRY: WorkflowModuleRegistry | None = None
 def _default_registry() -> WorkflowModuleRegistry:
     global _DEFAULT_REGISTRY
     if _DEFAULT_REGISTRY is None:
-        from workflow_config import RESOURCE_WORKFLOW_ROOT, discover_workflows
+        from .catalog import RESOURCE_WORKFLOW_ROOT, discover_workflows
 
         workflows, _errors = discover_workflows(RESOURCE_WORKFLOW_ROOT)
         workflow_dirs = {
@@ -74,7 +74,7 @@ def parse_workflow_filename(workflow: dict[str, Any], stem: str,
     """Use the parser declared by a workflow, or the generic core parser."""
     parser_id = str(workflow.get("filename_parser", "") or "").strip()
     if not parser_id:
-        from namer_core import parse_filename
+        from core.files import parse_filename
         return parse_filename(stem, template)
     parser = _runtime(registry).filename_parser(str(workflow.get("id", "")), parser_id)
     result = parser(stem, template, workflow)

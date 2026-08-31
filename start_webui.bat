@@ -1,4 +1,9 @@
 @echo off
+if not "%1"=="_min_" (
+    start /min "" "%~f0" _min_
+    exit /b
+)
+shift
 setlocal EnableExtensions
 
 cd /d "%~dp0"

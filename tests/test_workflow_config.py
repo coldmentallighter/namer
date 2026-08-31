@@ -7,7 +7,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from workflow_config import (
+from workflow_system.catalog import (
     CORE_FALLBACK_WORKFLOW,
     WorkflowCatalog,
     discover_workflows,

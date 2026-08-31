@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from workflow_config import WorkflowCatalog
-from workflow_runtime import WorkflowModuleError
+from workflow_system.catalog import WorkflowCatalog
+from workflow_system.runtime import WorkflowModuleError
 
 
 class WorkflowRuntimeTests(unittest.TestCase):

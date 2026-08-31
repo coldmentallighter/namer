@@ -44,8 +44,8 @@ python main.py
 python -m pip install pyinstaller openpyxl
 python -m PyInstaller --clean --noconfirm OfflineFileNamer.spec
 ```
+notice：构建尚存问题我暂时懒得改
 
-生成的 `dist\\OfflineFileNamer.exe` 使用 `Artwork\\Logo.ico` 作为程序图标，并写入版本 `1.0`、作者 `ColdLightVibe` 元数据；程序可在同类 Windows 环境离线运行，打包后的历史记录位于 exe 同级的 `history\\history.json`。
 
 ## 测试
 
@@ -59,4 +59,4 @@ python -m unittest discover -s tests -v
 
 ## 许可证与素材版权
 
-本项目原创源代码和文档采用 [MIT License](LICENSE)。MIT 许可不自动覆盖第三方依赖、样本音频/MIDI、插件预设、Logo 或历史记录等非代码素材；这些文件的来源、风险和发布前处理建议见 [版权与再分发审查](COPYRIGHT_REVIEW.md)。发布源码或可执行文件前，请先取得相应素材的再分发授权，或移除/替换来源不明的素材。
+本项目原创源代码和文档采用 [MIT License](LICENSE)。MIT 许可不自动覆盖第三方依赖、样本音频/MIDI、插件预设、Logo 或历史记录等非代码素材；

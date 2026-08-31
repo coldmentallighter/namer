@@ -6,7 +6,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from workflow_values import WorkflowValueStore
+from workflow_system.values import WorkflowValueStore
 
 
 class WorkflowValueStoreTests(unittest.TestCase):

@@ -10,7 +10,7 @@ from unittest.mock import patch
 
 from openpyxl import Workbook, load_workbook
 
-from namer_core import (
+from core.files import (
     NamingGroup,
     assign_numeric,
     build_stem_associations,
@@ -30,9 +30,9 @@ from namer_core import (
     undo_last,
     validate_filename,
 )
-from workflow_metadata import parse_workflow_filename, read_workflow_metadata
-from workflow_config import CORE_FALLBACK_WORKFLOW, discover_workflows, validate_workflow
-from workflow_runtime import WorkflowModuleRegistry
+from workflow_system.metadata import parse_workflow_filename, read_workflow_metadata
+from workflow_system.catalog import CORE_FALLBACK_WORKFLOW, discover_workflows, validate_workflow
+from workflow_system.runtime import WorkflowModuleRegistry
 
 
 INSTALLED_WORKFLOWS, _WORKFLOW_ERRORS = discover_workflows()
@@ -438,7 +438,7 @@ class NamerCoreTests(unittest.TestCase):
         self.assertTrue((self.root / "MIDI" / "Pattern1.mid").exists())
 
     def test_transaction_rolls_back_when_commit_fails(self):
-        import namer_core
+        from core import files as namer_core
         root = self.root / "MIDI"
         second = root / "Pattern2.mid"
         second.write_bytes(b"MThd2")

@@ -18,7 +18,7 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-from workflow_runtime import MODULE_MANIFEST_FILE_NAME, WorkflowModuleRegistry
+from .runtime import MODULE_MANIFEST_FILE_NAME, WorkflowModuleRegistry
 
 
 WORKFLOW_SCHEMA_VERSION = 1
@@ -41,7 +41,7 @@ _INITIAL_SOURCES = {"", "stem", "directory.meta", "directory.group", "directory.
 _MODULE_TRIGGERS = {"on_user_request", "after_scan"}
 
 
-RESOURCE_WORKFLOW_ROOT = Path(__file__).with_name("workflows")
+RESOURCE_WORKFLOW_ROOT = Path(__file__).resolve().parent.parent / "workflows"
 
 
 def _normalise_template(template: Any) -> list[dict[str, str]]:
