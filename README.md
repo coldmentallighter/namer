@@ -36,6 +36,38 @@ python main.py
 - 批量重命名及撤销/还原均先统一预检查，再通过临时文件名提交；支持事务内文件名互换和仅大小写变更，运行时失败会尝试整体补偿回滚。名称模式使用可逆的基础名称，导出页刷新不会清空正在编辑的命名任务。
 - 导出页生成详细 XLSX：文件名为 `<目录>.ffnf.xlsx`（冲突时使用 `<目录>.oriNN.ffnf.xlsx`），扩展名工作表包含 `SourceName`/`NewName`、通用文件信息和当前 workflow 读取到的动态 `Metadata.*` 列，并附带 `Metadata`、`Summary` 统计工作表；Excel 占位符由当前 workflow 的 `excel_placeholders` 声明，`{bpm}` / `{key_or_chord}` 因此只属于采样包 workflow。
 
+## 模块结构
+
+领域核心按职责拆为无环小模块，`web_app.py` 是唯一组合根（组装点）：
+
+```
+core/
+  models.py    8 个数据类（FileRecord/NamingGroup/ScanResult/…）
+  fsutil.py    Windows 属性、路径/扩展名等小工具
+  scan.py      目录扫描、命名分组、跨格式 stem 关联
+  naming.py    文件名组合、模板解析、数字命名
+  validate.py  文件名校验与重命名预检
+  rename.py    两阶段事务改名与文件指纹（原子性核心）
+  history.py   撤销/还原持久化与历史读/diff
+  xlsx.py      openpyxl 导入/导出/目录统计（唯一触碰 openpyxl 处）
+engine/
+  rules.py     表达式/条件 DSL 求值（无状态）
+  composer.py  目标名组合与冲突消解
+  executor.py  引擎门面 + 工作流模块执行协议（请求构造与候选落地）
+  session.py   有状态会话编排
+workflow_system/
+  schema.py    工作流 schema 纯校验（零 I/O，engine 只依赖它）
+  package.py   工作流打包/导入（zip 大小与路径安全检查）
+  catalog.py   热加载目录、发现/签名/摘要与安装事务（运行时类）
+  runtime.py   动态模块加载安全边界 + 能力分发门面
+  values.py    标签值持久化
+server/         HTTP 层：state、routes、controllers（与 POST 路由 1:1）
+```
+
+拆解原则：原 `core/files.py`、`workflow_system/catalog.py` 两个上帝模块已按职责拆开；
+`engine` 不再依赖 `workflow_system.catalog`，只依赖零 I/O 的 `schema`（R3 已解除）。
+纯搬移与重组，所有文件/类/函数签名不变，行为零变化。
+
 ## 构建可执行文件
 
 可选使用 PyInstaller（离线环境需预先准备其安装包）：
@@ -53,7 +85,7 @@ notice：构建尚存问题我暂时懒得改
 python -m unittest discover -s tests -v
 ```
 
-测试覆盖扫描和动态扩展名、workflow provider 隔离、模块热加载与坏插件隔离、字符串输出协议、metadata 派生与规则候选、目录层级映射、自然排序、中文/特殊字符、数字命名、文件名解析、跨格式同 stem 关联、冲突阻止、事务回滚、单项与批量撤销/还原、指纹保护、两种 XLSX 匹配模式、详细 XLSX 导出与目录统计，以及本地 WebUI/API。
+测试覆盖扫描和动态扩展名、workflow provider 隔离、模块热加载与坏插件隔离、字符串输出协议、metadata 派生与规则候选、目录层级映射、自然排序、中文/特殊字符、数字命名、文件名解析、跨格式同 stem 关联、冲突阻止、事务回滚、单项与批量撤销/还原、指纹保护、两种 XLSX 匹配模式、详细 XLSX 导出与目录统计，以及本地 WebUI/API。基线 80 用例全绿（3 个跳过，需要环境相关资源）。
 
 已知限制：浏览器安全模型无法直接把资源管理器拖入的文件夹绝对路径交给本地服务，因此 WebUI 默认使用 Windows 原生文件夹选择器和路径输入；后续可接入原生 WebView 容器实现资源管理器拖拽路径桥接。
 
